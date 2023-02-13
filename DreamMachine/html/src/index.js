@@ -1,5 +1,5 @@
-import * as THREE from './node_modules/three/build/three.module.js'
-import { SVGLoader } from "./SVGLoader.js";
+import * as THREE from 'three';
+import { SVGLoader } from './SVGLoader';
 const resolutionW = 180;
 const resolutionH = 150;
 const filename = 'data/alphachannel.svg';
@@ -52,6 +52,8 @@ function loadSvg(filename){
             const paths = data.paths;
             const group = new THREE.Group();
             
+            console.log('svg file contains ' + paths.length + ' paths');
+ 
             for(let i=0; i<paths.length; i++){
                 const path = paths[i];
                 const material = new THREE.MeshBasicMaterial({
@@ -64,6 +66,7 @@ function loadSvg(filename){
                 const shapes = SVGLoader.createShapes(path);
 
                 for ( let j = 0; j < shapes.length; j ++ ) {
+                    console.log('add shape #' + j)
                     const shape = shapes[ j ];
                     const geometry = new THREE.ShapeGeometry( shape );
                     const mesh = new THREE.Mesh( geometry, material );
