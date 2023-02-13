@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<autoschedule version="1.0" group="LocalStorageGroup">
+  <scheduledPresentation>
+    <presentationToSchedule>
+      <name>Project 1</name>
+      <fileName>Project 1.bpf</fileName>
+      <filePath>C:\Users\hiroshi\Desktop\BrightSign\SimpleTest\Project 1.bpf</filePath>
+    </presentationToSchedule>
+    <dateTime>2023-02-08T00:00:00</dateTime>
+    <duration>1440</duration>
+    <allDayEveryDay>True</allDayEveryDay>
+    <recurrence>False</recurrence>
+    <recurrencePattern>Daily</recurrencePattern>
+    <recurrencePatternDaily>EveryDay</recurrencePatternDaily>
+    <recurrencePatternDaysOfWeek>8</recurrencePatternDaysOfWeek>
+    <recurrenceStartDate>2023-02-08T00:00:00</recurrenceStartDate>
+    <recurrenceGoesForever>True</recurrenceGoesForever>
+    <recurrenceEndDate>2024-02-08T00:00:00</recurrenceEndDate>
+    <interruption>False</interruption>
+  </scheduledPresentation>
+</autoschedule>

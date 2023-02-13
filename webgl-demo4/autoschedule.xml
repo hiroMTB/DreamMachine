@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<autoschedule version="1.0" group="LocalStorageGroup">
+  <scheduledPresentation>
+    <presentationToSchedule>
+      <name>webgl-demo4</name>
+      <fileName>webgl-demo4.bpf</fileName>
+      <filePath>C:\Users\hiroshi\Desktop\BrightSign\webgl-demo4\webgl-demo4.bpf</filePath>
+    </presentationToSchedule>
+    <dateTime>2023-02-09T00:00:00</dateTime>
+    <duration>1440</duration>
+    <allDayEveryDay>True</allDayEveryDay>
+    <recurrence>False</recurrence>
+    <recurrencePattern>Daily</recurrencePattern>
+    <recurrencePatternDaily>EveryDay</recurrencePatternDaily>
+    <recurrencePatternDaysOfWeek>16</recurrencePatternDaysOfWeek>
+    <recurrenceStartDate>2023-02-09T00:00:00</recurrenceStartDate>
+    <recurrenceGoesForever>True</recurrenceGoesForever>
+    <recurrenceEndDate>2024-02-09T00:00:00</recurrenceEndDate>
+    <interruption>False</interruption>
+  </scheduledPresentation>
+</autoschedule>
