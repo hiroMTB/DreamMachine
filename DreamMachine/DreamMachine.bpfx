@@ -2,7 +2,7 @@
   "bsdm": {
     "sign": {
       "properties": {
-        "id": "09cbc032-de5e-4b2b-a05f-e1a46321439a",
+        "id": "cbbb02a4-b2d1-4be8-aea8-da1dadfb09e0",
         "version": "1.3.10",
         "name": "DreamMachine",
         "videoMode": "1920x1080x60p",
@@ -492,7 +492,7 @@
         }
       },
       "wssDeviceSpec": {},
-      "lastModifiedTime": "2023-02-13T17:08:05.518Z"
+      "lastModifiedTime": "2023-02-13T15:31:29.748Z"
     },
     "zones": {
       "zonesById": {
@@ -631,7 +631,7 @@
             "hwzOn": true,
             "useUserStylesheet": false,
             "enableFileURLSharedStorage": true,
-            "enableHtmlURLSharedStorage": true
+            "enableHtmlURLSharedStorage": false
           }
         }
       },
@@ -697,23 +697,7 @@
     "scriptPlugins": {},
     "parserPlugins": {},
     "videoModePlugins": {},
-    "auxiliaryFiles": {
-      "5c121f01-ccb1-451d-af78-6d358ec3d3d4": {
-        "id": "5c121f01-ccb1-451d-af78-6d358ec3d3d4",
-        "name": "SVGLoader.js",
-        "assetId": "1e08d36c-b9c3-43a1-8ca6-e0d4d8ebb44b"
-      },
-      "18f97a68-6336-428a-8aa2-bba9a57baee8": {
-        "id": "18f97a68-6336-428a-8aa2-bba9a57baee8",
-        "name": "three.module.js",
-        "assetId": "4161eae5-42ee-447d-ad23-5b658be256e9"
-      },
-      "2603d25c-d9ae-40c3-a813-487630ba4cb6": {
-        "id": "2603d25c-d9ae-40c3-a813-487630ba4cb6",
-        "name": "main.js",
-        "assetId": "532efff1-167e-45d1-b960-3e8027b1ba3a"
-      }
-    },
+    "auxiliaryFiles": {},
     "linkedPresentations": {},
     "partnerProducts": {},
     "customAutorun": "0",
@@ -729,45 +713,6 @@
         "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/index.html",
         "fileSize": 319,
         "lastModifiedDate": "2023-02-13T15:13:07.241Z",
-        "refCount": 1
-      },
-      "1e08d36c-b9c3-43a1-8ca6-e0d4d8ebb44b": {
-        "id": "1e08d36c-b9c3-43a1-8ca6-e0d4d8ebb44b",
-        "name": "SVGLoader.js",
-        "path": "/Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/",
-        "networkId": 0,
-        "location": "Local",
-        "assetType": "HtmlSite",
-        "scope": "bdd18af81c49489c",
-        "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/SVGLoader.js",
-        "fileSize": 69448,
-        "lastModifiedDate": "2023-02-13T16:49:35.644Z",
-        "refCount": 1
-      },
-      "4161eae5-42ee-447d-ad23-5b658be256e9": {
-        "id": "4161eae5-42ee-447d-ad23-5b658be256e9",
-        "name": "three.module.js",
-        "path": "/Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/",
-        "networkId": 0,
-        "location": "Local",
-        "assetType": "HtmlSite",
-        "scope": "bdd18af81c49489c",
-        "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/three.module.js",
-        "fileSize": 1172521,
-        "lastModifiedDate": "2023-02-13T16:39:14.678Z",
-        "refCount": 1
-      },
-      "532efff1-167e-45d1-b960-3e8027b1ba3a": {
-        "id": "532efff1-167e-45d1-b960-3e8027b1ba3a",
-        "name": "main.js",
-        "path": "/Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/",
-        "networkId": 0,
-        "location": "Local",
-        "assetType": "HtmlSite",
-        "scope": "bdd18af81c49489c",
-        "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/main.js",
-        "fileSize": 2263,
-        "lastModifiedDate": "2023-02-13T16:52:55.048Z",
         "refCount": 1
       }
     },
