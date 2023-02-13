@@ -1,0 +1,34 @@
+{
+  "schedulePresentations": {
+    "schedulePresentationsById": {
+      "112d7118-c713-4bb4-b873-cad8713cac24": {
+        "id": "112d7118-c713-4bb4-b873-cad8713cac24",
+        "presentationLocator": {
+          "name": "ThreeJSTest.bpfx",
+          "path": "/Users/hiroshimatoba/Desktop/DreamMachine/ThreeJSTest/",
+          "networkId": 0,
+          "location": "Local",
+          "assetType": "Project",
+          "scope": "bdd18af81c49489c"
+        },
+        "dateTime": "2023-02-13T00:00:00.000Z",
+        "duration": 1440,
+        "allDayEveryDay": true,
+        "recurrence": false,
+        "recurrencePattern": "AllDays",
+        "recurrencePatternDaysOfWeek": 127,
+        "recurrenceStartDate": "1970-01-01T00:00:00.000Z",
+        "recurrenceGoesForever": true,
+        "recurrenceEndDate": "2100-12-31T23:59:59.999Z",
+        "interruption": false
+      }
+    },
+    "allSchedulePresentations": [
+      "a1d1ad95-fc10-47df-b020-684060ce3622",
+      "112d7118-c713-4bb4-b873-cad8713cac24"
+    ]
+  },
+  "modifiedTime": {
+    "lastModifiedTime": "2023-02-13T10:21:34.730Z"
+  }
+}
