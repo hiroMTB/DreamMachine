@@ -10,37 +10,37 @@ let camera;
 let canvas;
 let renderer;
 let bg;
-let pointLight;
-let sphere;
+let emitter;
+let wall;
 
 main();
 
 function main() {
 
-    renderer = new THREE.WebGLRenderer( {canvas, alpha: true} );//, antialias: true});
-    bg = new THREE.Color(0.3, 0.3, 0.3);
+    renderer = new THREE.WebGLRenderer( {canvas, alpha: true, antialias: true});
+    bg = new THREE.Color(0.1, 0.1, 0.1);
     renderer.setClearColor(bg, 1);    
     renderer.setSize( resolutionW, resolutionH );
     document.body.appendChild( renderer.domElement );
 
     scene = new THREE.Scene();
-    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, -resolutionH/2, resolutionH/2, 1, 10000);
-    ortho.position.z = 100;
-    
+    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 10000);
+    ortho.position.set(0, 0, -1100);
+    ortho.lookAt(0,0,0);
+
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
     const controls = new OrbitControls( camera, renderer.domElement );
     
-    camera.position.set( 0, 0, 100 );
+    camera.position.set( 0, 0, -1100 );
     //controls.update() must be called after any manual changes to the camera's transform
     controls.update();
     camera.lookAt( 0, 0, 0 );
     
     setupWall();
-    // loadSvg(document.getElementById('svg'));
+    loadSvg(document.getElementById('svg'));
 
     setupLighting();    
-    //setupEmitter();
-
+    setupEmitter();
 
     const size = 100;
     const divisions = 10;
@@ -52,61 +52,70 @@ function main() {
         const timer = 0.0001 * Date.now();
         requestAnimationFrame( animate );
 
-        //animateEmitter(timer);
-        renderer.render( scene, camera );
+        animateEmitter(timer);
+        // renderer.render( scene, camera );
+        renderer.render( scene, ortho );
     };
 
     animate();
 }
 
 function setupWall(){
-    const geometry = new THREE.BoxGeometry(resolutionW*0.1, 0.5, resolutionH*0.1);
-    const material = new THREE.MeshPhongMaterial({color: 0xfafafa});
-    const wallMesh = new THREE.Mesh( geometry, material);
-    wallMesh.receiveShadow = true;
-	wallMesh.position.set(0,0,0);
-    scene.add(wallMesh);
+     
+    const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
+
+    const texture = new THREE.Texture( generateTexture() );
+    texture.needsUpdate = true;
+    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
+    
+    wall = new THREE.Mesh( geometry, material );
+    wall.position.set(0, 0, 100);
+    wall.receiveShadow = true;
+    scene.add( wall );
 }
 
 function setupEmitter(){
-    const geometry = new THREE.SphereGeometry( 10, 32, 16 );
+    const geometry = new THREE.SphereGeometry( 3, 32, 16 );
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
     const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true } ) ;
-	material.emissive = new THREE.Color(0,255,255);
+	material.emissive = new THREE.Color(255,5,5);
+    material.emissiveIntensity = 10;
 
-    sphere = new THREE.Mesh( geometry, material );
-    sphere.position.set(0, 0, 0);
-    
-    scene.add( sphere );
+    emitter = new THREE.Mesh( geometry, material );
+    emitter.position.set(0, 0, 0);
+    scene.add( emitter );
 }
 
 function animateEmitter(timer){        
-    sphere.position.x = Math.sin( timer * 4 ) * 30 * scale;
-    sphere.position.y = Math.cos( timer * 2 ) * 70 * scale;
-    sphere.position.z = Math.cos( timer * 1 ) * 30 * scale;
+    emitter.position.x = Math.sin( timer * 4 ) * 30 * 0.3 * scale;
+    emitter.position.y = Math.cos( timer * 2 ) * 70 * 0.3 * scale;
+    emitter.position.z = Math.cos( timer * 1 ) * 30 * 0.3 * scale;
 }
+
 
 function setupLighting(){
     // Ambient
-    scene.add( new THREE.AmbientLight( 0xffffff, 0.5 ) );
+    scene.add( new THREE.AmbientLight( 0xffffff, 0.4 ) );
 
     // directional
-    // const directionalLight = new THREE.DirectionalLight( 0x0000ff, 0.25 );
-    // directionalLight.position.set(0,200,0);
-    // const helper = new THREE.DirectionalLightHelper( directionalLight, 5 );
-    // scene.add( helper );
+    const dirLight = new THREE.DirectionalLight( 0xffaa00, 0.25 );
+    dirLight.position.set(-50, 50, 0);
+    if(wall) dirLight.target = wall;
+    const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
+    scene.add( dirLight, helper );
 
-    const pointLight = new THREE.PointLight( 0xffffff, 1, 8, 2);
-    pointLight.position.set(2, 20, 2);
+    // point
+    const pointLight = new THREE.PointLight( 0xddff00, 0.5, 400, 4);
+    pointLight.position.set(0, 50, 0);
     const phelper = new THREE.PointLightHelper( pointLight, 5 );
-    scene.add( phelper );
+    scene.add( pointLight, phelper );
 
    // set up spot light + helper
-   const spot = new THREE.SpotLight(0x00ff00, 1, 8, Math.PI / 8, 0);
-   spot.position.set(10, 20, 2);
-   const slHelper = new THREE.SpotLightHelper(spot);
-   scene.add(spot, slHelper);
+//    const spot = new THREE.SpotLight(0x00ff00, 1, 8, Math.PI / 8, 0);
+//    spot.position.set(10, 20, 2);
+//    const spotHelper = new THREE.SpotLightHelper(spot);
+//    scene.add(spot, spotHelper);
 }
 
 function loadSvg( svgElement ){
@@ -120,9 +129,8 @@ function loadSvg( svgElement ){
     const svgGroup = new THREE.Group();
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
-    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side: THREE.DoubleSide } ) ;
-
-    //const material = new THREE.MeshBasicMaterial( {color: 0x111111, transparent: true, opacity:0.9, side: THREE.DoubleSide} );
+    // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: false, side: THREE.DoubleSide } ) ;
+    const material = new THREE.MeshBasicMaterial( {color: 0x111111, transparent: false, side: THREE.DoubleSide} );
 
     // Loop through all of the parsed paths
     svgData.paths.forEach((path, i) => {
@@ -134,7 +142,7 @@ function loadSvg( svgElement ){
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.setX(-resolutionW/2);
         mesh.position.setY(-resolutionH/2);
-        mesh.position.setZ(50);
+        mesh.position.setZ(-100);
         mesh.scale.set(scale,scale,scale);
         svgGroup.add(mesh);
       });
