@@ -492,7 +492,7 @@
         }
       },
       "wssDeviceSpec": {},
-      "lastModifiedTime": "2023-02-13T15:31:29.748Z"
+      "lastModifiedTime": "2023-02-13T20:03:15.994Z"
     },
     "zones": {
       "zonesById": {
@@ -705,14 +705,14 @@
       "e64dde7b-ab3c-4e03-9b2b-1d889b5d8d1d": {
         "id": "e64dde7b-ab3c-4e03-9b2b-1d889b5d8d1d",
         "name": "index.html",
-        "path": "/Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/",
+        "path": "/Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/dist/",
         "networkId": 0,
         "location": "Local",
         "assetType": "HtmlSite",
         "scope": "bdd18af81c49489c",
-        "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/index.html",
-        "fileSize": 319,
-        "lastModifiedDate": "2023-02-13T15:13:07.241Z",
+        "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/dist/index.html",
+        "fileSize": 250,
+        "lastModifiedDate": "2023-02-13T20:01:54.947Z",
         "refCount": 1
       }
     },
