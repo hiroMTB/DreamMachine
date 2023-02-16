@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { SVGLoader } from './SVGLoader';
 const resolutionW = 180;
 const resolutionH = 150;
-const filename = 'data/alphachannel.svg';
+// import SvgFile from './data/alphachannel.svg';
 let scene;
 let ortho;
 let canvas;
@@ -30,7 +30,8 @@ function main() {
     //const plane = new THREE.Mesh( pgeometry, pmaterial );
     //scene.add( plane );
 
-    loadSvg(filename);
+
+    loadSvg();
 
     function animate() {
         requestAnimationFrame( animate );
@@ -43,37 +44,33 @@ function main() {
     animate();
 }
 
-function loadSvg(filename){
+function loadSvg(){
 
+    const svgMarkup = document.getElementById('svg').outerHTML;
     const loader = new SVGLoader();
-    loader.load(
-        'data/alphachannel.svg',
-        function( data ) {
-            const paths = data.paths;
-            const group = new THREE.Group();
-            
-            console.log('svg file contains ' + paths.length + ' paths');
- 
-            for(let i=0; i<paths.length; i++){
-                const path = paths[i];
-                const material = new THREE.MeshBasicMaterial({
-                    color: path.color,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-            
+    const svgData = loader.parse(svgMarkup);
+    console.log(svgMarkup);
+    console.log(svgData);
 
-                const shapes = SVGLoader.createShapes(path);
+    const svgGroup = new THREE.Group();
 
-                for ( let j = 0; j < shapes.length; j ++ ) {
-                    console.log('add shape #' + j)
-                    const shape = shapes[ j ];
-                    const geometry = new THREE.ShapeGeometry( shape );
-                    const mesh = new THREE.Mesh( geometry, material );
-                    group.add( mesh );
-                }
-            }
-            scene.add(group);
-        }
-    )
+    // const material = new THREE.MeshNormalMaterial();
+    const material = new THREE.MeshBasicMaterial( {color: 0x111111, transparent: true, opacity:0.9, side: THREE.DoubleSide} );
+
+    // Loop through all of the parsed paths
+    svgData.paths.forEach((path, i) => {
+      const shapes = SVGLoader.createShapes(path);
+    
+      // Each path has array of shapes
+      shapes.forEach((shape, j) => {
+        const geometry = new THREE.ShapeGeometry(shape);    
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.setX(-resolutionW/2);
+        mesh.position.setY(-resolutionH/2);
+        svgGroup.add(mesh);
+      });
+    });
+    
+    // Add our group to the scene (you'll need to create a scene)
+    scene.add(svgGroup);
 }
