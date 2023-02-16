@@ -5,20 +5,28 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const scale = 6;
-const resolutionW = 180 * scale;
-const resolutionH = 150 * scale;
+const pX = 60; // pixelcount X
+const pY = 30; // pixelcount Y
+const tX = 3; // tiles horizontal
+const tY = 5; // tiles vertical
+const resolutionW = pX * tX * scale;
+const resolutionH = pY * tY * scale;
+let fps = 24;
+let speed = 1;
+let origin = 0;
+
 let scene;
 let camera;
 let ortho, persp;
 let controlsOrtho, controlsPersp;
 let canvas;
 let renderer;
-let bg;
 let emitter;
 let wall;
+let prospects = [];
 let stats;
 const params = {
-    camera: 'perspective',
+    camera: 'ortho',
     side: 'double'
 };
 
@@ -33,7 +41,7 @@ main();
 function main() {
 
     renderer = new THREE.WebGLRenderer( {canvas, alpha: true, antialias: true});
-    bg = new THREE.Color(0.1, 0.1, 0.1);
+    const bg = new THREE.Color(0.3, 0.3, 0.3);
     renderer.setClearColor(bg, 1);    
     renderer.setSize( resolutionW, resolutionH );
     document.body.appendChild( renderer.domElement );
@@ -55,7 +63,7 @@ function main() {
     controlsPersp.update();
     
     setupWall();
-    loadSvg(document.getElementById('svg'));
+    setupProspects();
 
     setupLighting();    
     setupEmitter();
@@ -73,6 +81,7 @@ function main() {
         requestAnimationFrame( animate );
 
         stats.begin();
+        animateProspects();
         animateEmitter(timer);
 
         switch ( params.camera ) {
@@ -113,9 +122,21 @@ function setupWall(){
     const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
     
     wall = new THREE.Mesh( geometry, material );
-    wall.position.set(0, 0, 100);
+    wall.position.set(0, 0, 300);
     wall.receiveShadow = true;
     scene.add( wall );
+}
+
+function setupProspects(){
+    prospects = [];
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100));
+    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0, 100));
+    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0, 100));
+
+    for(let p of prospects){
+        scene.add(p);
+    }
 }
 
 function setupEmitter(){
@@ -129,6 +150,25 @@ function setupEmitter(){
     emitter = new THREE.Mesh( geometry, material );
     emitter.position.set(0, 0, 0);
     scene.add( emitter );
+}
+
+function animateProspects(){
+
+    origin += speed;
+    if(origin > resolutionW){
+        origin = 0;
+    }
+
+    if(prospects.length == 4){
+        prospects[0].position.setX(-origin);
+        prospects[1].position.setX(-origin+resolutionW);
+        prospects[2].position.setX(origin);
+        prospects[3].position.setX(origin-resolutionW);
+
+    }else{
+        console.error("prospects.length = " + prospects.length);
+    }
+
 }
 
 function animateEmitter(timer){        
@@ -162,7 +202,7 @@ function setupLighting(){
 //    scene.add(spot, spotHelper);
 }
 
-function loadSvg( svgElement ){
+function loadSvg( svgElement, x, y, z ){
 
     const svgMarkup = svgElement.outerHTML;
     const loader = new SVGLoader();
@@ -184,16 +224,16 @@ function loadSvg( svgElement ){
       shapes.forEach((shape, j) => {
         const geometry = new THREE.ShapeGeometry(shape);    
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.setX(-resolutionW/2);
-        mesh.position.setY(-resolutionH/2);
-        mesh.position.setZ(-100);
+        mesh.position.setX(-resolutionW/2 + x);
+        mesh.position.setY(-resolutionH/2 + y);
+        mesh.position.setZ(z);
         mesh.scale.set(scale,scale,scale);
         svgGroup.add(mesh);
       });
     });
     
-    // Add our group to the scene (you'll need to create a scene)
-    scene.add(svgGroup);
+    // scene.add(svgGroup);
+    return svgGroup;
 }
 
 
