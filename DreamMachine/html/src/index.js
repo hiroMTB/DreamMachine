@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { SVGLoader } from './SVGLoader';
+import Stats from 'three/addons/libs/stats.module.js';
+
 const scale = 6;
 const resolutionW = 180 * scale;
 const resolutionH = 150 * scale;
@@ -12,6 +14,7 @@ let renderer;
 let bg;
 let emitter;
 let wall;
+let stats;
 
 main();
 
@@ -47,14 +50,20 @@ function main() {
     const gridHelper = new THREE.GridHelper( size, divisions );
     scene.add( gridHelper );
 
+    stats = new Stats();
+    const container = document.getElementById("container");
+    container.appendChild(stats.dom);
+
     function animate() {
 
         const timer = 0.0001 * Date.now();
         requestAnimationFrame( animate );
 
+        stats.begin();
         animateEmitter(timer);
-        // renderer.render( scene, camera );
-        renderer.render( scene, ortho );
+        renderer.render( scene, camera );
+        // renderer.render( scene, ortho );
+        stats.end();
     };
 
     animate();
