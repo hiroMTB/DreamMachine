@@ -2,19 +2,31 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { SVGLoader } from './SVGLoader';
 import Stats from 'three/addons/libs/stats.module.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const scale = 6;
 const resolutionW = 180 * scale;
 const resolutionH = 150 * scale;
 let scene;
-let ortho;
 let camera;
+let ortho, persp;
+let controlsOrtho, controlsPersp;
 let canvas;
 let renderer;
 let bg;
 let emitter;
 let wall;
 let stats;
+const params = {
+    camera: 'perspective',
+    side: 'double'
+};
+
+const sides = {
+    'front': THREE.FrontSide,
+    'back': THREE.BackSide,
+    'double': THREE.DoubleSide
+};
 
 main();
 
@@ -27,17 +39,20 @@ function main() {
     document.body.appendChild( renderer.domElement );
 
     scene = new THREE.Scene();
+
+    // Ortho Camera
     ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 10000);
     ortho.position.set(0, 0, -1100);
     ortho.lookAt(0,0,0);
+    controlsOrtho = new OrbitControls( ortho, renderer.domElement );
 
-    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-    const controls = new OrbitControls( camera, renderer.domElement );
+    // Perspective Camera
+    persp = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+    controlsPersp = new OrbitControls( persp, renderer.domElement );
     
-    camera.position.set( 0, 0, -1100 );
-    //controls.update() must be called after any manual changes to the camera's transform
-    controls.update();
-    camera.lookAt( 0, 0, 0 );
+    persp.position.set( 0, 0, -1100 );
+    persp.lookAt( 0, 0, 0 );
+    controlsPersp.update();
     
     setupWall();
     loadSvg(document.getElementById('svg'));
@@ -50,9 +65,7 @@ function main() {
     const gridHelper = new THREE.GridHelper( size, divisions );
     scene.add( gridHelper );
 
-    stats = new Stats();
-    const container = document.getElementById("container");
-    container.appendChild(stats.dom);
+    setupGUI();
 
     function animate() {
 
@@ -61,12 +74,34 @@ function main() {
 
         stats.begin();
         animateEmitter(timer);
+
+        switch ( params.camera ) {
+            case 'perspective':
+                camera = persp;
+                break;
+            case 'ortho':
+                camera = ortho;
+                break;
+        }
+
+        controlsPersp.update();
+        controlsOrtho.update();
+
         renderer.render( scene, camera );
-        // renderer.render( scene, ortho );
         stats.end();
     };
 
     animate();
+}
+
+function setupGUI(){
+    stats = new Stats();
+    const container = document.getElementById("container");
+    container.appendChild(stats.dom);
+
+    const gui = new GUI();
+    gui.add( params, 'camera', [ 'perspective', 'ortho' ] );
+    gui.add( params, 'side', [ 'front', 'back', 'double' ] );
 }
 
 function setupWall(){
