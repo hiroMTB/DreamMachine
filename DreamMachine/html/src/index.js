@@ -12,7 +12,6 @@ const tY = 5; // tiles vertical
 const resolutionW = pX * tX * scale;
 const resolutionH = pY * tY * scale;
 let fps = 24;
-let speed = 1;
 let origin = 0;
 
 let scene;
@@ -21,20 +20,15 @@ let ortho, persp;
 let controlsOrtho, controlsPersp;
 let canvas;
 let renderer;
-let emitter;
 let wall;
 let prospects = [];
 let stats;
 const params = {
     camera: 'ortho',
-    side: 'double'
+    speed: 1
 };
 
-const sides = {
-    'front': THREE.FrontSide,
-    'back': THREE.BackSide,
-    'double': THREE.DoubleSide
-};
+let pointLights = [];
 
 main();
 
@@ -68,9 +62,11 @@ function main() {
     setupLighting();    
     setupEmitter();
 
-    const size = 100;
-    const divisions = 10;
+    const size = 1000;
+    const divisions = 25;
     const gridHelper = new THREE.GridHelper( size, divisions );
+    gridHelper.position.set(0,-resolutionH/2,0);
+
     scene.add( gridHelper );
 
     setupGUI();
@@ -105,12 +101,13 @@ function main() {
 
 function setupGUI(){
     stats = new Stats();
+    stats.domElement.style.cssText = 'position:absolute;bottom:0px;left:0px;';
     const container = document.getElementById("container");
     container.appendChild(stats.dom);
 
     const gui = new GUI();
     gui.add( params, 'camera', [ 'perspective', 'ortho' ] );
-    gui.add( params, 'side', [ 'front', 'back', 'double' ] );
+    gui.add( params, 'speed', 0, 3);
 }
 
 function setupWall(){
@@ -140,21 +137,20 @@ function setupProspects(){
 }
 
 function setupEmitter(){
-    const geometry = new THREE.SphereGeometry( 3, 32, 16 );
+    const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
-    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true } ) ;
-	material.emissive = new THREE.Color(255,5,5);
-    material.emissiveIntensity = 10;
-
-    emitter = new THREE.Mesh( geometry, material );
-    emitter.position.set(0, 0, 0);
-    scene.add( emitter );
+    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.5, side:THREE.DoubleSide } ) ;
+    
+    const eScreen = new THREE.Mesh( geometry, material );
+    eScreen.position.set(0, 0, 0);
+    eScreen.receiveShadow = true;
+    scene.add( eScreen );
 }
 
 function animateProspects(){
 
-    origin += speed;
+    origin += params.speed;
     if(origin > resolutionW){
         origin = 0;
     }
@@ -171,10 +167,12 @@ function animateProspects(){
 
 }
 
-function animateEmitter(timer){        
-    emitter.position.x = Math.sin( timer * 4 ) * 30 * 0.3 * scale;
-    emitter.position.y = Math.cos( timer * 2 ) * 70 * 0.3 * scale;
-    emitter.position.z = Math.cos( timer * 1 ) * 30 * 0.3 * scale;
+function animateEmitter(timer){ 
+    for(let i=0; i<pointLights.length; i++){
+        pointLights[i].position.x = Math.sin( i * Math.PI * 0.3 + timer * 4 * (i+1)*0.2) * resolutionW/2;
+        pointLights[i].position.y = Math.cos( i * Math.PI * 0.3 + timer * 2 * (i+1)*0.2) * resolutionH/2;
+        pointLights[i].position.z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 200;
+    }
 }
 
 
@@ -183,17 +181,22 @@ function setupLighting(){
     scene.add( new THREE.AmbientLight( 0xffffff, 0.4 ) );
 
     // directional
-    const dirLight = new THREE.DirectionalLight( 0xffaa00, 0.25 );
-    dirLight.position.set(-50, 50, 0);
+    const dirLight = new THREE.DirectionalLight( 0xffaa00, 0.5 );
+    dirLight.position.set(-50, 300, 200);
     if(wall) dirLight.target = wall;
     const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
     scene.add( dirLight, helper );
 
     // point
-    const pointLight = new THREE.PointLight( 0xddff00, 0.5, 400, 4);
-    pointLight.position.set(0, 50, 0);
-    const phelper = new THREE.PointLightHelper( pointLight, 5 );
-    scene.add( pointLight, phelper );
+    pointLights = [];
+    const color = [0xddff00, 0xff3333, 0xaaaaaa];
+    for(let i=0; i<3; i++){
+        let p = new THREE.PointLight( color[i], 1.5, 1200, 1);
+        p.position.set(0, 50, -50);
+        const phelper = new THREE.PointLightHelper( p, 10 );        
+        scene.add( p, phelper );
+        pointLights.push(p);
+    }
 
    // set up spot light + helper
 //    const spot = new THREE.SpotLight(0x00ff00, 1, 8, Math.PI / 8, 0);
@@ -207,14 +210,12 @@ function loadSvg( svgElement, x, y, z ){
     const svgMarkup = svgElement.outerHTML;
     const loader = new SVGLoader();
     const svgData = loader.parse(svgMarkup);
-    console.log(svgMarkup);
-    console.log(svgData);
 
     const svgGroup = new THREE.Group();
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
     // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: false, side: THREE.DoubleSide } ) ;
-    const material = new THREE.MeshBasicMaterial( {color: 0x111111, transparent: false, side: THREE.DoubleSide} );
+    const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
 
     // Loop through all of the parsed paths
     svgData.paths.forEach((path, i) => {
