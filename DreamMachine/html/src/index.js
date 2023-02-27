@@ -131,17 +131,17 @@ function setupWall(){
     const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
     
     wall = new THREE.Mesh( geometry, material );
-    wall.position.set(0, 0, 300);
+    wall.position.set(0, 0, 600);
     wall.receiveShadow = true;
     scene.add( wall );
 }
 
 function setupProspects(){
     prospects = [];
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0,  100, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0,  100, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0, -200, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0, -200, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  200, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  200, 1, prospect2scaleY));
 
     for(let p of prospects){
         scene.add(p);
@@ -180,10 +180,29 @@ function animateProspects(){
 }
 
 function animateEmitter(timer){ 
-    for(let i=0; i<pointLights.length; i++){
-        pointLights[i].position.x = Math.sin( i * Math.PI * 0.3 + timer * 4 * (i+1)*0.2) * resolutionW/2;
-        pointLights[i].position.y = Math.cos( i * Math.PI * 0.3 + timer * 2 * (i+1)*0.2) * resolutionH/2;
-        pointLights[i].position.z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 200;
+    const numPL = pointLights.length; // expect 6
+
+    for(let i=0; i<numPL/2; i++){
+        const x = Math.sin( i * Math.PI * 0.3 + timer * 4 * (i+1)*0.2) * resolutionW/2;
+        const y = Math.cos( i * Math.PI * 0.3 + timer * 2 * (i+1)*0.2) * resolutionH/2;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 200;
+
+        pointLights[i].position.x = x;
+        pointLights[i].position.y = y;
+        pointLights[i].position.z = z;
+
+        let size = resolutionW;
+        
+        // x: -size/2 - size/2
+        // x2: 0 - size
+        let x2 = x + size/2;
+        if(x2<-size/2) x2 = size/2+x2;
+        else if(size/2<x2) x2 = x2-size;
+
+        if(x2 < -size/2) x2 = size/2 + x2
+        pointLights[i+numPL/2].position.x =  x2;
+        pointLights[i+numPL/2].position.y =  y;
+        pointLights[i+numPL/2].position.z = -z;
     }
 }
 
@@ -204,18 +223,18 @@ function setupLighting(){
     scene.add( new THREE.AmbientLight( 0xffffff, 0.4 ) );
 
     // directional
-    dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-    dirLight.position.set(0, 500, 200);
+    dirLight = new THREE.DirectionalLight( 0xcccccc, 0.5 );
+    dirLight.position.set(0, 500, 300);
     if(wall) dirLight.target = wall;
     dirLightHelper = new THREE.DirectionalLightHelper( dirLight, 5 );
     
     scene.add( dirLight, dirLightHelper );
 
-    // point
+    // point, this is actual emitters
     pointLights = [];
     const color = [0xff5912, 0xffd712, 0xff8400];
-    for(let i=0; i<3; i++){
-        const p = new THREE.PointLight( color[i], 1.5, 1200, 1);
+    for(let i=0; i<6; i++){
+        const p = new THREE.PointLight( color[i%3], 1.0, 600, 1);
         p.position.set(0, 50, -50);
         
         const helper = new THREE.PointLightHelper( p, 10 );        
@@ -232,7 +251,7 @@ function setupLighting(){
 //    scene.add(spot, spotHelper);
 }
 
-function loadSvg( svgElement, x, y, z, scaleX, scaleY){
+function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
 
     const svgMarkup = svgElement.outerHTML;
     const loader = new SVGLoader();
@@ -242,7 +261,8 @@ function loadSvg( svgElement, x, y, z, scaleX, scaleY){
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
     // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: false, side: THREE.DoubleSide } ) ;
-    const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
+    const material0 = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
+    const material1 = new THREE.MeshPhongMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide, specular: 0xaaaaaa, shininess: 20} );
 
     // Loop through all of the parsed paths
     svgData.paths.forEach((path, i) => {
@@ -250,8 +270,13 @@ function loadSvg( svgElement, x, y, z, scaleX, scaleY){
     
       // Each path has array of shapes
       shapes.forEach((shape, j) => {
-        const geometry = new THREE.ShapeGeometry(shape);    
-        const mesh = new THREE.Mesh(geometry, material);
+        const geometry = new THREE.ShapeGeometry(shape);
+        let mesh;
+        if(id<=1){
+            mesh = new THREE.Mesh(geometry, material0);
+        }else{
+            mesh = new THREE.Mesh(geometry, material1);
+        }
 
         const sx = globalScale * scaleX;
         const sy = globalScale * scaleY;
@@ -260,7 +285,7 @@ function loadSvg( svgElement, x, y, z, scaleX, scaleY){
         const centerX = -w/2;
         const centerY = -h/2;
         
-        mesh.position.set(centerX, centerY, z);
+        mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
         console.log(sx, sy, w, h, centerX, centerY);
 
