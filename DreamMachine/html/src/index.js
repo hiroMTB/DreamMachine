@@ -4,15 +4,16 @@ import { SVGLoader } from './SVGLoader';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-const scale = 6;
+const globalScale = 6;
 const pX = 60; // pixelcount X
 const pY = 30; // pixelcount Y
 const tX = 3; // tiles horizontal
 const tY = 5; // tiles vertical
-const resolutionW = pX * tX * scale;
-const resolutionH = pY * tY * scale;
+const resolutionW = pX * tX * globalScale;
+const resolutionH = pY * tY * globalScale;
 let fps = 24;
 let origin = 0;
+let prospect2scaleY = 0.95;
 
 let scene;
 let camera;
@@ -20,15 +21,23 @@ let ortho, persp;
 let controlsOrtho, controlsPersp;
 let canvas;
 let renderer;
+let gridHelper;
+
 let wall;
 let prospects = [];
 let stats;
+
 const params = {
+    debug: true,
     camera: 'ortho',
     speed: 1
 };
 
+let dirLight;
+let dirLightHelper;
+
 let pointLights = [];
+let pointLightHelpers = [];
 
 main();
 
@@ -64,8 +73,8 @@ function main() {
 
     const size = 1000;
     const divisions = 25;
-    const gridHelper = new THREE.GridHelper( size, divisions );
-    gridHelper.position.set(0,-resolutionH/2,0);
+    gridHelper = new THREE.GridHelper( size, divisions );
+    // gridHelper.position.set(0,-resolutionH/2,0);
 
     scene.add( gridHelper );
 
@@ -106,8 +115,11 @@ function setupGUI(){
     container.appendChild(stats.dom);
 
     const gui = new GUI();
+    gui.add( params, 'debug')
+    .onChange(value=>{ setDebugMode(value)})
     gui.add( params, 'camera', [ 'perspective', 'ortho' ] );
     gui.add( params, 'speed', 0, 3);
+
 }
 
 function setupWall(){
@@ -126,10 +138,10 @@ function setupWall(){
 
 function setupProspects(){
     prospects = [];
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100));
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100));
-    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0, 100));
-    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0, 100));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, -100, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0,  100, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 0, 0,  100, 1, prospect2scaleY));
 
     for(let p of prospects){
         scene.add(p);
@@ -175,27 +187,42 @@ function animateEmitter(timer){
     }
 }
 
+function setDebugMode(debug){
+    
+    // Helpers
+    dirLightHelper.visible = debug;
+    for(let h of pointLightHelpers){
+        h.visible = debug;
+    }
+
+    // Grid
+    gridHelper.visible = debug;
+}
 
 function setupLighting(){
     // Ambient
     scene.add( new THREE.AmbientLight( 0xffffff, 0.4 ) );
 
     // directional
-    const dirLight = new THREE.DirectionalLight( 0xffaa00, 0.5 );
-    dirLight.position.set(-50, 300, 200);
+    dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+    dirLight.position.set(0, 500, 200);
     if(wall) dirLight.target = wall;
-    const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
-    scene.add( dirLight, helper );
+    dirLightHelper = new THREE.DirectionalLightHelper( dirLight, 5 );
+    
+    scene.add( dirLight, dirLightHelper );
 
     // point
     pointLights = [];
-    const color = [0xddff00, 0xff3333, 0xaaaaaa];
+    const color = [0xff5912, 0xffd712, 0xff8400];
     for(let i=0; i<3; i++){
-        let p = new THREE.PointLight( color[i], 1.5, 1200, 1);
+        const p = new THREE.PointLight( color[i], 1.5, 1200, 1);
         p.position.set(0, 50, -50);
-        const phelper = new THREE.PointLightHelper( p, 10 );        
-        scene.add( p, phelper );
+        
+        const helper = new THREE.PointLightHelper( p, 10 );        
+        scene.add( p, helper );
+        
         pointLights.push(p);
+        pointLightHelpers.push(helper);
     }
 
    // set up spot light + helper
@@ -205,7 +232,7 @@ function setupLighting(){
 //    scene.add(spot, spotHelper);
 }
 
-function loadSvg( svgElement, x, y, z ){
+function loadSvg( svgElement, x, y, z, scaleX, scaleY){
 
     const svgMarkup = svgElement.outerHTML;
     const loader = new SVGLoader();
@@ -225,10 +252,18 @@ function loadSvg( svgElement, x, y, z ){
       shapes.forEach((shape, j) => {
         const geometry = new THREE.ShapeGeometry(shape);    
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.setX(-resolutionW/2 + x);
-        mesh.position.setY(-resolutionH/2 + y);
-        mesh.position.setZ(z);
-        mesh.scale.set(scale,scale,scale);
+
+        const sx = globalScale * scaleX;
+        const sy = globalScale * scaleY;
+        const w = resolutionW  * scaleX;
+        const h = resolutionH  * scaleY;
+        const centerX = -w/2;
+        const centerY = -h/2;
+        
+        mesh.position.set(centerX, centerY, z);
+        mesh.scale.set(sx, sy, globalScale);
+        console.log(sx, sy, w, h, centerX, centerY);
+
         svgGroup.add(mesh);
       });
     });
