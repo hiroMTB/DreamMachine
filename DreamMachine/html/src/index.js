@@ -38,6 +38,8 @@ let dirLightHelper;
 
 let pointLights = [];
 let pointLightHelpers = [];
+let centerLights = [];
+let centerLightHelpers = [];
 
 main();
 
@@ -220,28 +222,41 @@ function setDebugMode(debug){
 
 function setupLighting(){
     // Ambient
-    scene.add( new THREE.AmbientLight( 0xffffff, 0.4 ) );
+    // scene.add( new THREE.AmbientLight( 0xffffff, 0.4 ) );
 
-    // directional
-    dirLight = new THREE.DirectionalLight( 0xcccccc, 0.5 );
-    dirLight.position.set(0, 500, 300);
-    if(wall) dirLight.target = wall;
-    dirLightHelper = new THREE.DirectionalLightHelper( dirLight, 5 );
-    
-    scene.add( dirLight, dirLightHelper );
+    // point light array
+    centerLights = [];
+    centerLightHelpers = [];
+    const nCenterLights = 12;
+
+    // 2800K = rgb(255, 173, 94) = 0xFFAD5E
+    const cColor = 0x555555;
+
+    const step = resolutionW / (nCenterLights-1);
+    for(let i=0; i<nCenterLights; i++){
+        const p = new THREE.PointLight( cColor, 0.5, 800, 0.6);
+        const x = -resolutionW/2 + step *i;
+        p.position.set(x, 0, -30);
+        
+        const helper = new THREE.PointLightHelper( p, 10 );
+        scene.add( p, helper );
+        
+        centerLights.push(p);
+        centerLightHelpers.push(helper);
+    }
 
     // point, this is actual emitters
     pointLights = [];
-    const color = [0xff5912, 0xffd712, 0xff8400];
+    pointLightHelpers = [];
+
+    const pColor = 0xffffff;
     for(let i=0; i<6; i++){
-        const p = new THREE.PointLight( color[i%3], 1.0, 600, 1);
-        p.position.set(0, 50, -50);
+        pointLights.push(new THREE.PointLight( pColor, 0.3, 600, 0.1));
+        pointLights[i].position.set(0, 50, -50);
         
-        const helper = new THREE.PointLightHelper( p, 10 );        
-        scene.add( p, helper );
-        
-        pointLights.push(p);
-        pointLightHelpers.push(helper);
+
+        pointLightHelpers.push(new THREE.PointLightHelper( pointLights[i], 10 ));
+        scene.add( pointLights[i], pointLightHelpers[i]);
     }
 
    // set up spot light + helper
