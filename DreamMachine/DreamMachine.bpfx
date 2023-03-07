@@ -3,7 +3,7 @@
     "sign": {
       "properties": {
         "id": "cbbb02a4-b2d1-4be8-aea8-da1dadfb09e0",
-        "version": "1.3.10",
+        "version": "1.4.0",
         "name": "DreamMachine",
         "videoMode": "1920x1080x60p",
         "size": {
@@ -492,7 +492,7 @@
         }
       },
       "wssDeviceSpec": {},
-      "lastModifiedTime": "2023-02-13T20:03:15.994Z"
+      "lastModifiedTime": "2023-03-07T10:14:24.394Z"
     },
     "zones": {
       "zonesById": {
@@ -622,7 +622,7 @@
             "name": "HTML 5",
             "type": "Html",
             "siteId": "6aeb5aa2-7a3a-49d3-b7a9-02bf9aafd6fd",
-            "enableBrightSignJavascriptObjects": true,
+            "enableBrightSignJavascriptObjects": false,
             "enableCrossDomainPolicyChecks": false,
             "ignoreHttpsCertificateErrors": false,
             "enableCamera": false,
@@ -678,7 +678,13 @@
         "enableNode": false
       }
     },
-    "nodeApps": {},
+    "nodeApps": {
+      "f1b232a5-f049-4984-a0f9-93ee627928b1": {
+        "id": "f1b232a5-f049-4984-a0f9-93ee627928b1",
+        "name": "index",
+        "indexAssetId": "26c3ab0e-da0e-4bb1-9381-379c20d6ac67"
+      }
+    },
     "dataFeeds": {
       "feedsById": {},
       "sourcesById": {}
@@ -705,14 +711,27 @@
       "e64dde7b-ab3c-4e03-9b2b-1d889b5d8d1d": {
         "id": "e64dde7b-ab3c-4e03-9b2b-1d889b5d8d1d",
         "name": "index.html",
-        "path": "/Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/dist/",
+        "path": "/Users/matobahiroshi/Desktop/DreamMachine/DreamMachine/html/dist/",
         "networkId": 0,
         "location": "Local",
         "assetType": "HtmlSite",
-        "scope": "bdd18af81c49489c",
-        "locator": "file:///Users/hiroshimatoba/Desktop/DreamMachine/DreamMachine/html/dist/index.html",
-        "fileSize": 250,
-        "lastModifiedDate": "2023-02-13T20:01:54.947Z",
+        "scope": "52c25b98a2581079",
+        "locator": "file:///Users/matobahiroshi/Desktop/DreamMachine/DreamMachine/html/dist/index.html",
+        "fileSize": 31005,
+        "lastModifiedDate": "2023-03-06T17:37:28.521Z",
+        "refCount": 1
+      },
+      "26c3ab0e-da0e-4bb1-9381-379c20d6ac67": {
+        "id": "26c3ab0e-da0e-4bb1-9381-379c20d6ac67",
+        "name": "index.js",
+        "path": "/Users/matobahiroshi/Desktop/DreamMachine/node.js-starter-project/",
+        "networkId": 0,
+        "location": "Local",
+        "assetType": "HtmlSite",
+        "scope": "40cfcdc0b2742726",
+        "locator": "file:///Users/matobahiroshi/Desktop/DreamMachine/node.js-starter-project/index.js",
+        "fileSize": 357,
+        "lastModifiedDate": "2023-03-07T09:23:39.490Z",
         "refCount": 1
       }
     },
