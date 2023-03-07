@@ -160,12 +160,17 @@ function setupEmitter(){
     const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
-    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.5, side:THREE.DoubleSide } ) ;
+    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: false, opacity: 0.0, side:THREE.DoubleSide } ) ;
     
-    const eScreen = new THREE.Mesh( geometry, material );
-    eScreen.position.set(0, 0, 0);
-    eScreen.receiveShadow = true;
-    scene.add( eScreen );
+    const eScreen1 = new THREE.Mesh( geometry, material );
+    eScreen1.position.set(0, 0, 0);
+    eScreen1.receiveShadow = true;
+    scene.add( eScreen1 );
+
+    const eScreen2 = new THREE.Mesh( geometry, material );
+    eScreen2.position.set(0, 0, -300);
+    eScreen2.receiveShadow = true;
+    scene.add( eScreen2 );
 }
 
 function animateProspects(){
