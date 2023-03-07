@@ -313,7 +313,7 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
         
         mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
-        console.log(sx, sy, w, h, centerX, centerY);
+        //console.log(sx, sy, w, h, centerX, centerY);
 
         svgGroup.add(mesh);
       });
