@@ -148,8 +148,8 @@ function setupProspects(){
     prospects = [];
     prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0, -200, 1, 1));
     prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0, -200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  200, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  200, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  300, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  300, 1, prospect2scaleY));
 
     for(let p of prospects){
         scene.add(p);
