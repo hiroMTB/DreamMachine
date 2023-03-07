@@ -1,0 +1,33 @@
+{
+  "schedulePresentations": {
+    "schedulePresentationsById": {
+      "95bfff13-29f6-498c-b699-f7fe7abe19ca": {
+        "id": "95bfff13-29f6-498c-b699-f7fe7abe19ca",
+        "presentationLocator": {
+          "name": "nodeStarter.bpfx",
+          "path": "/Users/matobahiroshi/Desktop/DreamMachine/node.js-starter-project/",
+          "location": "Local",
+          "assetType": "Project",
+          "networkId": 0,
+          "scope": "52c25b98a2581079"
+        },
+        "dateTime": "2023-03-07T00:00:00.000Z",
+        "duration": 1440,
+        "allDayEveryDay": true,
+        "recurrence": false,
+        "recurrencePattern": "AllDays",
+        "recurrencePatternDaysOfWeek": 127,
+        "recurrenceStartDate": "1970-01-01T00:00:00.000Z",
+        "recurrenceGoesForever": true,
+        "recurrenceEndDate": "2100-12-31T23:59:59.999Z",
+        "interruption": false
+      }
+    },
+    "allSchedulePresentations": [
+      "95bfff13-29f6-498c-b699-f7fe7abe19ca"
+    ]
+  },
+  "modifiedTime": {
+    "lastModifiedTime": "2023-03-07T09:21:41.142Z"
+  }
+}
