@@ -1,0 +1,23 @@
+{
+  "name": "brightsign-node.js-sample",
+  "version": "1.0.0",
+  "description": "This sample BrightAuthor:connected application shows how to instantiate a node.js server that runs on a BrightSign player. It creates a web server that can serve static files from port 9090.",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "support@brightsign.biz (http://www.brightsign.biz/)",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "7.13.16",
+    "@babel/preset-typescript": "7.13.0",
+    "@types/node": "15.0.1",
+    "babel-loader": "8.2.2",
+    "copy-webpack-plugin": "^8.1.1",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^4.10.0",
+    "zip-webpack-plugin": "^4.0.1"
+  },
+  "dependencies": {
+    "express": "4.17.1"
+  }
+}
