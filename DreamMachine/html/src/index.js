@@ -193,7 +193,7 @@ function animateEmitter(timer){
     for(let i=0; i<numPL/2; i++){
         const x = Math.sin( i * Math.PI * 0.3 + timer * 4 * (i+1)*0.2) * resolutionW/2;
         const y = Math.cos( i * Math.PI * 0.3 + timer * 2 * (i+1)*0.2) * resolutionH/2;
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 200;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 500;
 
         pointLights[i].position.x = x;
         pointLights[i].position.y = y;
