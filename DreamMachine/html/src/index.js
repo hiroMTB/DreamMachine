@@ -27,10 +27,14 @@ let wall;
 let prospects = [];
 let stats;
 
+// color
+const startTime = Date.now();
+
 const params = {
     debug: true,
     camera: 'ortho',
-    speed: 1
+    speed: 1,
+    colorSpeed: 1/(23.0*60)
 };
 
 let dirLight;
@@ -90,6 +94,7 @@ function main() {
         stats.begin();
         animateProspects();
         animateEmitter(timer);
+        animateEmitterColor();
 
         switch ( params.camera ) {
             case 'perspective':
@@ -121,6 +126,7 @@ function setupGUI(){
     .onChange(value=>{ setDebugMode(value)})
     gui.add( params, 'camera', [ 'perspective', 'ortho' ] );
     gui.add( params, 'speed', 0, 3);
+    gui.add( params, 'colorSpeed', 0.000000000001, 0.001);
 
 }
 
@@ -335,4 +341,78 @@ function generateTexture() {
     context.putImageData( image, 0, 0 );
 
     return canvas;
+}
+
+function animateEmitterColor(){
+    const cycleDurationFlag1 = 23*60*60 * params.colorSpeed;      // 23hrs*60mins*60secs
+    const cycleDurationFlag2 = 23*60*60*5.0 * params.colorSpeed;  // 5 * 23hrs*60mins*60secs
+    const cycleDurationFlag3 = 23*60*60 * params.colorSpeed;      // 23hrs*60mins*60secs
+    let hl = 0;
+    let hm = 60;
+    let hr = 240;
+  
+    let saturation = 1; //               #1 = 100%
+    let brightness = 1; //               #1 = 100%
+    
+    const progressTime = (Date.now() - startTime)/1000;
+    let progressPercent = (progressTime%cycleDurationFlag1)/cycleDurationFlag1;
+    let progressPercent360 = progressPercent*360;
+    let value = ((hl+progressPercent360)%360)/360;
+    console.log(value);
+    let color1 = hsvToHEX(value, saturation, brightness);
+    console.log(color1);
+
+    progressPercent = 1.0-(progressTime%cycleDurationFlag2)/cycleDurationFlag2;
+    progressPercent360 = progressPercent*360;
+    value = 1.0+(((hm-progressPercent360)%360)/360);
+    let color2 = hsvToHEX(value, saturation, brightness);
+
+    progressPercent = (progressTime%cycleDurationFlag3)/cycleDurationFlag3;
+    progressPercent360 = progressPercent*360;
+    value = ((hr+progressPercent360)%360)/360;
+    let color3 = hsvToHEX(value, saturation, brightness);
+
+    let colors = [color1, color2, color3];
+
+    const numPL = pointLights.length; // expect 6
+
+    for(let i=0; i<numPL/2; i++){
+        pointLights[i].color.setHex(colors[i]);
+        pointLights[i+numPL/2].color.setHex(colors[i]);
+    }
+}
+
+function hsvToHEX(h,s,v){
+    const rgb = hsvToRgb(h,s,v);
+    return rgbToHEX(rgb[0],rgb[1],rgb[2]);
+}
+
+function rgbToHEX(r,g,b){
+    return "0x" + convert(r) + convert(g) + convert(b);
+}
+
+function hsvToRgb(h, s, v) {
+    let r, g, b;
+
+    let i = Math.floor(h * 6);
+    let f = h * 6 - i;
+    let p = v * (1 - s);
+    let q = v * (1 - f * s);
+    let t = v * (1 - (1 - f) * s);
+
+    switch (i % 6) {
+      case 0: r = v, g = t, b = p; break;
+      case 1: r = q, g = v, b = p; break;
+      case 2: r = p, g = v, b = t; break;
+      case 3: r = p, g = q, b = v; break;
+      case 4: r = t, g = p, b = v; break;
+      case 5: r = v, g = p, b = q; break;
+    }
+
+    return [ Math.round(r * 255), Math.round(g * 255), Math.round(b * 255) ];
+}
+
+function convert(integer) {
+    let str = Number(integer).toString(16);
+    return str.length == 1 ? "0" + str : str;
 }
