@@ -24,7 +24,7 @@ let finalComposer;
 
 let svgW = 180;
 let svgH = 150;
-const globalScale = 1;
+const globalScale = 3;
 const pX = 64; // pixelcount X
 const pY = 32; // pixelcount Y
 const tX = 4; // tiles horizontal
@@ -274,7 +274,7 @@ function setupGUI(){
         //render();
     } );
 
-    folder.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
+    folder.add( params, 'bloomThreshold', 0.0, 0.2 ).onChange( function ( value ) {
         bloomPass.threshold = Number( value );
         // render();
     } );
@@ -293,7 +293,6 @@ function setupGUI(){
 function setupWall(){
      
     const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
-
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
     // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
@@ -351,8 +350,8 @@ function setupEmitter(){
         const eScreen1 = new THREE.Mesh( geometry, material );
         eScreen1.position.set(0, 0, 0);
         eScreen1.receiveShadow = true;
-        // eScreen1.layers.disable( BLOOM_SCENE );
-        // eScreen1.layers.enable( ENTIRE_SCENE );
+        eScreen1.layers.disable( BLOOM_SCENE );
+        eScreen1.layers.enable( ENTIRE_SCENE );
         scene.add( eScreen1 );
 
         // const eScreen2 = new THREE.Mesh( geometry, material );
@@ -477,8 +476,8 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
             mesh = new THREE.Mesh(geometry, material0);
         }
 
-        const sx = globalScale * scaleX * svgScaleX;
-        const sy = globalScale * scaleY * svgScaleY;
+        const sx = scaleX * svgScaleX;
+        const sy = scaleY * svgScaleY;
         const w = resolutionW;
         const h = resolutionH;
         const centerX = -w/2 * scaleX;
@@ -487,13 +486,13 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
         mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
         //console.log(sx, sy, w, h, centerX, centerY);
-        // mesh.layers.disable( BLOOM_SCENE );
+        mesh.layers.disable( BLOOM_SCENE );
+        mesh.layers.enable( ENTIRE_SCENE );
 
         svgGroup.add(mesh);
       });
     });
     
-    // scene.add(svgGroup);
     return svgGroup;
 }
 
