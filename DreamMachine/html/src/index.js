@@ -113,78 +113,8 @@ function main() {
     }
     setupGUI();
 
-    function animate() {
-
-        const timer = 0.0001 * Date.now();
-        requestAnimationFrame( animate );
-
-        stats.begin();
-        animateProspects();
-        animateEmitter(timer);
-        changeEmitterColor();
-
-        controlsOrtho.update();
-
-        switch ( params.scene ) {
-
-            case 'Scene only':
-                renderer.render( scene, camera );
-                break;
-            case 'Glow only':
-                renderBloom( false );
-                break;
-            case 'Scene with Glow':
-            default:
-                // render scene with bloom
-                renderBloom( true );
-
-                // render the entire scene, then render bloom scene on top
-                finalComposer.render();
-                break;
-
-        }
-        //renderer.render( scene, camera );
-        stats.end();
-    };
-
     setDebugMode(params.debug);
-    animate();
-}
-
-function renderBloom( mask ) {
-
-    if ( mask === true ) {
-        scene.traverse( darkenNonBloomed );
-        bloomComposer.render();
-        scene.traverse( restoreMaterial );
-    } else {
-        camera.layers.set( BLOOM_SCENE );
-        bloomComposer.render();
-        camera.layers.set( ENTIRE_SCENE );
-    }
-}
-
-function darkenNonBloomed( obj ) {
-    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
-        materials[ obj.uuid ] = obj.material;
-        obj.material = darkMaterial;
-    }
-
-    // for(let i=0; i<prospects.length; i++){
-    //     materials[ prospects[i].uuid ] = prospects[i].material;
-    //     prospects[i].material = darkMaterial;
-    // }
-}
-
-function restoreMaterial( obj ) {
-    if ( materials[ obj.uuid ] ) {
-        obj.material = materials[ obj.uuid ];
-        delete materials[ obj.uuid ];
-    }
-    // for(let i=0; i<prospects.length; i++){
-    //     prospects[i].material = materials[ prospects[i].uuid ];
-    //     delete materials[ obj.uuid ];
-    // }
+    render();
 }
 
 function setupRenderPass(){
@@ -534,3 +464,63 @@ function changeEmitterColor(){
     }
 }
 
+function render() {
+
+    const timer = 0.0001 * Date.now();
+    requestAnimationFrame( render );
+
+    stats.begin();
+    animateProspects();
+    animateEmitter(timer);
+    changeEmitterColor();
+
+    controlsOrtho.update();
+
+    switch ( params.scene ) {
+
+        case 'Scene only':
+            renderer.render( scene, camera );
+            break;
+        case 'Glow only':
+            renderBloom( false );
+            break;
+        case 'Scene with Glow':
+        default:
+            // render scene with bloom
+            renderBloom( true );
+
+            // render the entire scene, then render bloom scene on top
+            finalComposer.render();
+            break;
+
+    }
+    //renderer.render( scene, camera );
+    stats.end();
+};
+
+function renderBloom( mask ) {
+
+    if ( mask === true ) {
+        scene.traverse( darkenNonBloomed );
+        bloomComposer.render();
+        scene.traverse( restoreMaterial );
+    } else {
+        camera.layers.set( BLOOM_SCENE );
+        bloomComposer.render();
+        camera.layers.set( ENTIRE_SCENE );
+    }
+}
+
+function darkenNonBloomed( obj ) {
+    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
+        materials[ obj.uuid ] = obj.material;
+        obj.material = darkMaterial;
+    }
+}
+
+function restoreMaterial( obj ) {
+    if ( materials[ obj.uuid ] ) {
+        obj.material = materials[ obj.uuid ];
+        delete materials[ obj.uuid ];
+    }
+}
