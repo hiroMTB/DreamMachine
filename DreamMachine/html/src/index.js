@@ -34,7 +34,6 @@ const resolutionH = pY * tY * globalScale;
 let svgScaleX = resolutionW / svgW;
 let svgScaleY = resolutionH / svgH;
 
-let fps = 24;
 let origin = 0;
 let prospect2scaleY = 0.95;
 
@@ -67,8 +66,6 @@ const params = {
 };
 
 let emitters =[];
-
-let pointLightHelpers = [];
 let centerLights = [];
 let centerLightHelpers = [];
 
@@ -387,7 +384,6 @@ function animateProspects(){
     }else{
         console.error("prospects.length = " + prospects.length);
     }
-
 }
 
 function animateEmitter(timer){ 
@@ -420,10 +416,6 @@ function animateEmitter(timer){
 function setDebugMode(debug){
     
     // Helpers
-    for(let h of pointLightHelpers){
-        h.visible = debug;
-    }
-
     for(let h of centerLightHelpers){
         h.visible = debug;
     }
@@ -456,18 +448,6 @@ function setupLighting(){
         centerLights.push(p);
         centerLightHelpers.push(helper);
     }
-
-    // // point, this is actual emitters
-    // pointLights = [];
-    // pointLightHelpers = [];
-
-    // const pColor = 0xffffff;
-    // for(let i=0; i<6; i++){
-    //     pointLights.push(new THREE.PointLight( pColor, 0.3, 600, 0.1));
-    //     pointLights[i].position.set(0, 50, -50);        
-    //     pointLightHelpers.push(new THREE.PointLightHelper( pointLights[i], 10 ));
-    //     scene.add( pointLights[i], pointLightHelpers[i]);
-    // }
 }
 
 function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
