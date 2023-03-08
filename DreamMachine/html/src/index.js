@@ -20,7 +20,7 @@ let bloomPass;
 let finalPass;
 let finalComposer;
 
-const globalScale = 6;
+const globalScale = 1;
 const pX = 60; // pixelcount X
 const pY = 30; // pixelcount Y
 const tX = 3; // tiles horizontal
@@ -47,13 +47,13 @@ let stats;
 const startTime = Date.now();
 
 const params = {
-    debug: true,
+    debug: false,
     camera: 'ortho',
     speed: 1,
     colorSpeed: 1/(23.0*60),
 
     exposure: 1,
-    bloomStrength: 5,
+    bloomStrength: 0.5,
     bloomThreshold: 0,
     bloomRadius: 0,
     scene: 'Scene with Glow'
