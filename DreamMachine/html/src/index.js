@@ -4,13 +4,19 @@ import { SVGLoader } from './SVGLoader';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-const globalScale = 6;
-const pX = 60; // pixelcount X
-const pY = 30; // pixelcount Y
-const tX = 3; // tiles horizontal
-const tY = 5; // tiles vertical
+const globalScale = 1;
+const svgW = 180;
+const svgH = 150;
+
+const pX = 64; // pixelcount X
+const pY = 32; // pixelcount Y
+const tX = 4; // tiles horizontal
+const tY = 7; // tiles vertical
 const resolutionW = pX * tX * globalScale;
 const resolutionH = pY * tY * globalScale;
+let svgScaleX = resolutionW / svgW;
+let svgScaleY = resolutionH / svgH;
+
 let fps = 24;
 let origin = 0;
 let prospect2scaleY = 0.95;
@@ -31,7 +37,7 @@ let stats;
 const startTime = Date.now();
 
 const params = {
-    debug: true,
+    debug: false,
     camera: 'ortho',
     speed: 1,
     colorSpeed: 1/(23.0*60)
@@ -146,10 +152,10 @@ function setupWall(){
 
 function setupProspects(){
     prospects = [];
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0, -200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0, -200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  300, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  300, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0, -200, svgScaleX, svgScaleY));
+    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0, -200, svgScaleX, svgScaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  300, svgScaleX, prospect2scaleY*svgScaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  300, svgScaleX, prospect2scaleY*svgScaleY));
 
     for(let p of prospects){
         scene.add(p);
@@ -167,10 +173,10 @@ function setupEmitter(){
     eScreen1.receiveShadow = true;
     scene.add( eScreen1 );
 
-    const eScreen2 = new THREE.Mesh( geometry, material );
-    eScreen2.position.set(0, 0, -300);
-    eScreen2.receiveShadow = true;
-    scene.add( eScreen2 );
+    // const eScreen2 = new THREE.Mesh( geometry, material );
+    // eScreen2.position.set(0, 0, -300);
+    // eScreen2.receiveShadow = true;
+    // scene.add( eScreen2 );
 }
 
 function animateProspects(){
@@ -306,14 +312,14 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
 
         const sx = globalScale * scaleX;
         const sy = globalScale * scaleY;
-        const w = resolutionW  * scaleX;
-        const h = resolutionH  * scaleY;
+        const w = resolutionW;
+        const h = resolutionH;
         const centerX = -w/2;
         const centerY = -h/2;
         
         mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
-        //console.log(sx, sy, w, h, centerX, centerY);
+        console.log(sx, sy, w, h, centerX, centerY);
 
         svgGroup.add(mesh);
       });
@@ -363,9 +369,9 @@ function animateEmitterColor(){
     let progressPercent = (progressTime%cycleDurationFlag1)/cycleDurationFlag1;
     let progressPercent360 = progressPercent*360;
     let value = ((hl+progressPercent360)%360)/360;
-    console.log(value);
+    // console.log(value);
     let color1 = hsvToHEX(value, saturation, brightness);
-    console.log(color1);
+    // console.log(color1);
 
     progressPercent = 1.0-(progressTime%cycleDurationFlag2)/cycleDurationFlag2;
     progressPercent360 = progressPercent*360;
