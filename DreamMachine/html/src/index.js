@@ -4,6 +4,22 @@ import { SVGLoader } from './SVGLoader';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
+
+const bloomLayer = new THREE.Layers();
+bloomLayer.set( BLOOM_SCENE );
+const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
+const materials = {};
+
+let bloomComposer;
+let bloomPass;
+let finalPass;
+let finalComposer;
+
 const globalScale = 6;
 const pX = 60; // pixelcount X
 const pY = 30; // pixelcount Y
@@ -34,11 +50,16 @@ const params = {
     debug: true,
     camera: 'ortho',
     speed: 1,
-    colorSpeed: 1/(23.0*60)
+    colorSpeed: 1/(23.0*60),
+
+    exposure: 1,
+    bloomStrength: 5,
+    bloomThreshold: 0,
+    bloomRadius: 0,
+    scene: 'Scene with Glow'
 };
 
-let dirLight;
-let dirLightHelper;
+let emitters =[];
 
 let pointLights = [];
 let pointLightHelpers = [];
@@ -50,16 +71,21 @@ main();
 function main() {
 
     renderer = new THREE.WebGLRenderer( {canvas, alpha: true, antialias: true});
-    const bg = new THREE.Color(0.3, 0.3, 0.3);
+    const bg = new THREE.Color(0,0,0);
     renderer.setClearColor(bg, 1);    
     renderer.setSize( resolutionW, resolutionH );
+    
+    // TODO: check
+    // renderer.toneMapping = THREE.ReinhardToneMapping;
+    // renderer.setPixelRatio( window.devicePixelRatio );
+
     document.body.appendChild( renderer.domElement );
 
     scene = new THREE.Scene();
 
     // Ortho Camera
     ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 10000);
-    ortho.position.set(0, 0, -1100);
+    ortho.position.set(0, 0, 1100);
     ortho.lookAt(0,0,0);
     controlsOrtho = new OrbitControls( ortho, renderer.domElement );
 
@@ -71,11 +97,13 @@ function main() {
     persp.lookAt( 0, 0, 0 );
     controlsPersp.update();
     
+    camera = ortho;
+
+    setupRenderPass();
+    setupEmitter();
     setupWall();
     setupProspects();
-
-    setupLighting();    
-    setupEmitter();
+    setupLighting();  
 
     const size = 1000;
     const divisions = 25;
@@ -83,6 +111,7 @@ function main() {
     // gridHelper.position.set(0,-resolutionH/2,0);
 
     scene.add( gridHelper );
+    gridHelper.layers.disable( BLOOM_SCENE );
 
     setupGUI();
 
@@ -108,11 +137,89 @@ function main() {
         controlsPersp.update();
         controlsOrtho.update();
 
-        renderer.render( scene, camera );
+        switch ( params.scene ) {
+
+            case 'Scene only':
+                renderer.render( scene, camera );
+                break;
+            case 'Glow only':
+                renderBloom( false );
+                break;
+            case 'Scene with Glow':
+            default:
+                // render scene with bloom
+                renderBloom( true );
+
+                // render the entire scene, then render bloom scene on top
+                finalComposer.render();
+                break;
+
+        }
+        //renderer.render( scene, camera );
         stats.end();
     };
 
     animate();
+}
+
+function renderBloom( mask ) {
+
+    if ( mask === true ) {
+        // scene.traverse( darkenNonBloomed );
+        bloomComposer.render();
+        scene.traverse( restoreMaterial );
+    } else {
+        camera.layers.set( BLOOM_SCENE );
+        bloomComposer.render();
+        camera.layers.set( ENTIRE_SCENE );
+    }
+}
+
+function darkenNonBloomed( obj ) {
+    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
+        materials[ obj.uuid ] = obj.material;
+        obj.material = darkMaterial;
+    }
+}
+
+function restoreMaterial( obj ) {
+    if ( materials[ obj.uuid ] ) {
+        obj.material = materials[ obj.uuid ];
+        delete materials[ obj.uuid ];
+    }
+}
+
+function setupRenderPass(){
+    const renderScene = new RenderPass( scene, camera );
+
+    bloomPass = new UnrealBloomPass( new THREE.Vector2( resolutionW, resolutionH ), 1.5, 0.4, 0.85 );
+    bloomPass.threshold = params.bloomThreshold;
+    bloomPass.strength = params.bloomStrength;
+    bloomPass.radius = params.bloomRadius;
+
+    bloomComposer = new EffectComposer( renderer );
+    bloomComposer.renderToScreen = false;
+    bloomComposer.addPass( renderScene );
+    bloomComposer.addPass( bloomPass );
+    bloomComposer.setSize( resolutionW, resolutionH );
+    
+    finalPass = new ShaderPass(
+        new THREE.ShaderMaterial( {
+            uniforms: {
+                baseTexture: { value: null },
+                bloomTexture: { value: bloomComposer.renderTarget2.texture }
+            },
+            vertexShader: document.getElementById( 'vertexshader' ).textContent,
+            fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+            defines: {}
+        } ), 'baseTexture'
+    );
+    finalPass.needsSwap = true;
+
+    finalComposer = new EffectComposer( renderer );
+    finalComposer.setSize( resolutionW, resolutionH);
+    finalComposer.addPass( renderScene );
+    finalComposer.addPass( finalPass );
 }
 
 function setupGUI(){
@@ -128,6 +235,44 @@ function setupGUI(){
     gui.add( params, 'speed', 0, 3);
     gui.add( params, 'colorSpeed', 0.000000000001, 0.001);
 
+
+    gui.add( params, 'scene', [ 'Scene with Glow', 'Glow only', 'Scene only' ] ).onChange( function ( value ) {
+
+        switch ( value ) 	{
+            case 'Scene with Glow':
+                bloomComposer.renderToScreen = false;
+                break;
+            case 'Glow only':
+                bloomComposer.renderToScreen = true;
+                break;
+            case 'Scene only':
+                // nothing to do
+                break;
+        }
+        //render();
+    } );
+
+    const folder = gui.addFolder( 'Bloom Parameters' );
+
+    folder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+        renderer.toneMappingExposure = Math.pow( value, 4.0 );
+        //render();
+    } );
+
+    folder.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
+        bloomPass.threshold = Number( value );
+        // render();
+    } );
+
+    folder.add( params, 'bloomStrength', 0.0, 10.0 ).onChange( function ( value ) {
+        bloomPass.strength = Number( value );
+        // render();
+    } );
+
+    folder.add( params, 'bloomRadius', 0.0, 10.0 ).step( 0.01 ).onChange( function ( value ) {
+        bloomPass.radius = Number( value );
+        // render();
+    } );
 }
 
 function setupWall(){
@@ -137,40 +282,78 @@ function setupWall(){
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
     const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
-    
+    // const material = new THREE.MeshBasicMaterial( { color: 0x33333 } );
+
     wall = new THREE.Mesh( geometry, material );
-    wall.position.set(0, 0, 600);
+    wall.position.set(0, 0, -600);
     wall.receiveShadow = true;
+    wall.layers.disable( BLOOM_SCENE );
+    wall.layers.enable( ENTIRE_SCENE );
     scene.add( wall );
 }
 
 function setupProspects(){
     prospects = [];
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0, -200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0, -200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  300, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  300, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0,   300, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0,   300, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  -200, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  -200, 1, prospect2scaleY));
 
     for(let p of prospects){
+        p.layers.disable( BLOOM_SCENE );
+        p.layers.enable( ENTIRE_SCENE );
         scene.add(p);
     }
 }
 
 function setupEmitter(){
-    const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
-    const texture = new THREE.Texture( generateTexture() );
-    texture.needsUpdate = true;
-    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: false, opacity: 0.0, side:THREE.DoubleSide } ) ;
     
-    const eScreen1 = new THREE.Mesh( geometry, material );
-    eScreen1.position.set(0, 0, 0);
-    eScreen1.receiveShadow = true;
-    scene.add( eScreen1 );
+    scene.traverse( disposeMaterial );
+    scene.children.length = 0;
 
-    const eScreen2 = new THREE.Mesh( geometry, material );
-    eScreen2.position.set(0, 0, -300);
-    eScreen2.receiveShadow = true;
-    scene.add( eScreen2 );
+    const geometry = new THREE.IcosahedronGeometry( 50, 15 );
+    for(let i=0; i<6; i++){
+        const color = new THREE.Color();
+        color.setHSL( Math.random(), 0.7, Math.random() * 0.2 + 0.05 );
+
+        const material = new THREE.MeshBasicMaterial( { color: color } );
+        const sphere = new THREE.Mesh( geometry, material );
+        sphere.position.x = Math.random() * 400 - 10;
+        sphere.position.y = Math.random() * 400 - 10;
+        sphere.position.z = Math.random() * 400 - 10;
+        // sphere.position.normalize().multiplyScalar( Math.random() * 4.0 + 2.0 );
+        sphere.scale.setScalar( Math.random() * Math.random() + 0.5 );
+        scene.add( sphere );
+        sphere.layers.enable( BLOOM_SCENE );
+
+        emitters.push(sphere);
+    }
+
+    {
+        const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
+        const texture = new THREE.Texture( generateTexture() );
+        texture.needsUpdate = true;
+         const material = new THREE.MeshLambertMaterial( { color: 0xaaaaaa, map: texture, transparent: true, opacity: 0.1, side:THREE.DoubleSide } ) ;        
+        // const material = new THREE.MeshBasicMaterial( { color: 0x333333 } );
+
+        const eScreen1 = new THREE.Mesh( geometry, material );
+        eScreen1.position.set(0, 0, 0);
+        // eScreen1.receiveShadow = true;
+        eScreen1.layers.disable( BLOOM_SCENE );
+        eScreen1.layers.enable( ENTIRE_SCENE );
+        scene.add( eScreen1 );
+
+        // const eScreen2 = new THREE.Mesh( geometry, material );
+        // eScreen2.position.set(0, 0, -300);
+        // eScreen2.receiveShadow = true;
+        // scene.add( eScreen2 );
+    }
+}
+
+function disposeMaterial( obj ) {
+    if ( obj.material ) {
+        obj.material.dispose();
+    }
 }
 
 function animateProspects(){
@@ -193,16 +376,16 @@ function animateProspects(){
 }
 
 function animateEmitter(timer){ 
-    const numPL = pointLights.length; // expect 6
+    const numPL = emitters.length; // expect 6
 
     for(let i=0; i<numPL/2; i++){
         const x = Math.sin( i * Math.PI * 0.3 + timer * 4 * (i+1)*0.2) * resolutionW/2;
         const y = Math.cos( i * Math.PI * 0.3 + timer * 2 * (i+1)*0.2) * resolutionH/2;
         const z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 500;
 
-        pointLights[i].position.x = x;
-        pointLights[i].position.y = y;
-        pointLights[i].position.z = z;
+        emitters[i].position.x = x;
+        emitters[i].position.y = y;
+        emitters[i].position.z = z;
 
         let size = resolutionW;
         
@@ -213,17 +396,20 @@ function animateEmitter(timer){
         else if(size/2<x2) x2 = x2-size;
 
         if(x2 < -size/2) x2 = size/2 + x2
-        pointLights[i+numPL/2].position.x =  x2;
-        pointLights[i+numPL/2].position.y =  y;
-        pointLights[i+numPL/2].position.z = -z;
+        emitters[i+numPL/2].position.x =  x2;
+        emitters[i+numPL/2].position.y =  y;
+        emitters[i+numPL/2].position.z = -z;
     }
 }
 
 function setDebugMode(debug){
     
     // Helpers
-    dirLightHelper.visible = debug;
     for(let h of pointLightHelpers){
+        h.visible = debug;
+    }
+
+    for(let h of centerLightHelpers){
         h.visible = debug;
     }
 
@@ -245,9 +431,9 @@ function setupLighting(){
 
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
-        const p = new THREE.PointLight( cColor, 0.5, 800, 0.6);
+        const p = new THREE.PointLight( cColor, 0.42, 500, 0.6);
         const x = -resolutionW/2 + step *i;
-        p.position.set(x, 0, -30);
+        p.position.set(x, 0, 100);
         
         const helper = new THREE.PointLightHelper( p, 10 );
         scene.add( p, helper );
@@ -256,25 +442,17 @@ function setupLighting(){
         centerLightHelpers.push(helper);
     }
 
-    // point, this is actual emitters
-    pointLights = [];
-    pointLightHelpers = [];
+    // // point, this is actual emitters
+    // pointLights = [];
+    // pointLightHelpers = [];
 
-    const pColor = 0xffffff;
-    for(let i=0; i<6; i++){
-        pointLights.push(new THREE.PointLight( pColor, 0.3, 600, 0.1));
-        pointLights[i].position.set(0, 50, -50);
-        
-
-        pointLightHelpers.push(new THREE.PointLightHelper( pointLights[i], 10 ));
-        scene.add( pointLights[i], pointLightHelpers[i]);
-    }
-
-   // set up spot light + helper
-//    const spot = new THREE.SpotLight(0x00ff00, 1, 8, Math.PI / 8, 0);
-//    spot.position.set(10, 20, 2);
-//    const spotHelper = new THREE.SpotLightHelper(spot);
-//    scene.add(spot, spotHelper);
+    // const pColor = 0xffffff;
+    // for(let i=0; i<6; i++){
+    //     pointLights.push(new THREE.PointLight( pColor, 0.3, 600, 0.1));
+    //     pointLights[i].position.set(0, 50, -50);        
+    //     pointLightHelpers.push(new THREE.PointLightHelper( pointLights[i], 10 ));
+    //     scene.add( pointLights[i], pointLightHelpers[i]);
+    // }
 }
 
 function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
@@ -301,7 +479,7 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
         if(id<=1){
             mesh = new THREE.Mesh(geometry, material0);
         }else{
-            mesh = new THREE.Mesh(geometry, material1);
+            mesh = new THREE.Mesh(geometry, material0);
         }
 
         const sx = globalScale * scaleX;
@@ -314,6 +492,7 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
         mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
         //console.log(sx, sy, w, h, centerX, centerY);
+        mesh.layers.disable( BLOOM_SCENE );
 
         svgGroup.add(mesh);
       });
@@ -322,7 +501,6 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
     // scene.add(svgGroup);
     return svgGroup;
 }
-
 
 function generateTexture() {
 
@@ -363,9 +541,7 @@ function animateEmitterColor(){
     let progressPercent = (progressTime%cycleDurationFlag1)/cycleDurationFlag1;
     let progressPercent360 = progressPercent*360;
     let value = ((hl+progressPercent360)%360)/360;
-    console.log(value);
     let color1 = hsvToHEX(value, saturation, brightness);
-    console.log(color1);
 
     progressPercent = 1.0-(progressTime%cycleDurationFlag2)/cycleDurationFlag2;
     progressPercent360 = progressPercent*360;
