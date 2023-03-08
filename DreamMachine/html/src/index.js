@@ -20,13 +20,18 @@ let bloomPass;
 let finalPass;
 let finalComposer;
 
+let svgW = 180;
+let svgH = 150;
 const globalScale = 1;
-const pX = 60; // pixelcount X
-const pY = 30; // pixelcount Y
-const tX = 3; // tiles horizontal
-const tY = 5; // tiles vertical
+const pX = 64; // pixelcount X
+const pY = 32; // pixelcount Y
+const tX = 4; // tiles horizontal
+const tY = 7; // tiles vertical
 const resolutionW = pX * tX * globalScale;
 const resolutionH = pY * tY * globalScale;
+let svgScaleX = resolutionW / svgW;
+let svgScaleY = resolutionH / svgH;
+
 let fps = 24;
 let origin = 0;
 let prospect2scaleY = 0.95;
@@ -49,19 +54,18 @@ const startTime = Date.now();
 const params = {
     debug: false,
     camera: 'ortho',
-    speed: 1,
+    speed: 3.5,
     colorSpeed: 1/(23.0*60),
 
     exposure: 1,
-    bloomStrength: 0.5,
+    bloomStrength: 0,
     bloomThreshold: 0,
-    bloomRadius: 0,
+    bloomRadius: 1,
     scene: 'Scene with Glow'
 };
 
 let emitters =[];
 
-let pointLights = [];
 let pointLightHelpers = [];
 let centerLights = [];
 let centerLightHelpers = [];
@@ -76,12 +80,14 @@ function main() {
     renderer.setSize( resolutionW, resolutionH );
     
     // TODO: check
-    // renderer.toneMapping = THREE.ReinhardToneMapping;
-    // renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.setPixelRatio( window.devicePixelRatio );
 
     document.body.appendChild( renderer.domElement );
 
     scene = new THREE.Scene();
+    scene.traverse( disposeMaterial );
+    scene.children.length = 0;
 
     // Ortho Camera
     ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 10000);
@@ -159,6 +165,7 @@ function main() {
         stats.end();
     };
 
+    setDebugMode(params.debug);
     animate();
 }
 
@@ -167,7 +174,7 @@ function renderBloom( mask ) {
     if ( mask === true ) {
         // scene.traverse( darkenNonBloomed );
         bloomComposer.render();
-        scene.traverse( restoreMaterial );
+        // scene.traverse( restoreMaterial );
     } else {
         camera.layers.set( BLOOM_SCENE );
         bloomComposer.render();
@@ -176,15 +183,24 @@ function renderBloom( mask ) {
 }
 
 function darkenNonBloomed( obj ) {
-    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
-        materials[ obj.uuid ] = obj.material;
-        obj.material = darkMaterial;
+    // if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
+    //     materials[ obj.uuid ] = obj.material;
+    //     obj.material = darkMaterial;
+    // }
+
+    for(let i=0; i<prospects.length; i++){
+        materials[ prospects[i].uuid ] = prospects[i].material;
+        prospects[i].material = darkMaterial;
     }
 }
 
 function restoreMaterial( obj ) {
-    if ( materials[ obj.uuid ] ) {
-        obj.material = materials[ obj.uuid ];
+    // if ( materials[ obj.uuid ] ) {
+    //     obj.material = materials[ obj.uuid ];
+    //     delete materials[ obj.uuid ];
+    // }x
+    for(let i=0; i<prospects.length; i++){
+        prospects[i].material = materials[ prospects[i].uuid ];
         delete materials[ obj.uuid ];
     }
 }
@@ -281,8 +297,8 @@ function setupWall(){
 
     const texture = new THREE.Texture( generateTexture() );
     texture.needsUpdate = true;
-    const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
-    // const material = new THREE.MeshBasicMaterial( { color: 0x33333 } );
+    // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
+    const material = new THREE.MeshBasicMaterial( { color: 0x222222 } );
 
     wall = new THREE.Mesh( geometry, material );
     wall.position.set(0, 0, -600);
@@ -294,10 +310,10 @@ function setupWall(){
 
 function setupProspects(){
     prospects = [];
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0,   300, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0,   300, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  -200, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  -200, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0,  200, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0,  200, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  -300, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  -300, 1, prospect2scaleY));
 
     for(let p of prospects){
         p.layers.disable( BLOOM_SCENE );
@@ -307,11 +323,8 @@ function setupProspects(){
 }
 
 function setupEmitter(){
-    
-    scene.traverse( disposeMaterial );
-    scene.children.length = 0;
 
-    const geometry = new THREE.IcosahedronGeometry( 50, 15 );
+    const geometry = new THREE.IcosahedronGeometry( 20, 8 );
     for(let i=0; i<6; i++){
         const color = new THREE.Color();
         color.setHSL( Math.random(), 0.7, Math.random() * 0.2 + 0.05 );
@@ -333,14 +346,14 @@ function setupEmitter(){
         const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
         const texture = new THREE.Texture( generateTexture() );
         texture.needsUpdate = true;
-         const material = new THREE.MeshLambertMaterial( { color: 0xaaaaaa, map: texture, transparent: true, opacity: 0.1, side:THREE.DoubleSide } ) ;        
+         const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.1, side:THREE.DoubleSide } ) ;        
         // const material = new THREE.MeshBasicMaterial( { color: 0x333333 } );
 
         const eScreen1 = new THREE.Mesh( geometry, material );
         eScreen1.position.set(0, 0, 0);
-        // eScreen1.receiveShadow = true;
-        eScreen1.layers.disable( BLOOM_SCENE );
-        eScreen1.layers.enable( ENTIRE_SCENE );
+        eScreen1.receiveShadow = true;
+        // eScreen1.layers.disable( BLOOM_SCENE );
+        // eScreen1.layers.enable( ENTIRE_SCENE );
         scene.add( eScreen1 );
 
         // const eScreen2 = new THREE.Mesh( geometry, material );
@@ -379,9 +392,9 @@ function animateEmitter(timer){
     const numPL = emitters.length; // expect 6
 
     for(let i=0; i<numPL/2; i++){
-        const x = Math.sin( i * Math.PI * 0.3 + timer * 4 * (i+1)*0.2) * resolutionW/2;
-        const y = Math.cos( i * Math.PI * 0.3 + timer * 2 * (i+1)*0.2) * resolutionH/2;
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 3 * (i+1)*0.2) * 500;
+        const x = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 4 * (i+1)*0.2) * resolutionW/2;
+        const y = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 2 * (i+1)*0.2) * resolutionH/2;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.2) * 500;
 
         emitters[i].position.x = x;
         emitters[i].position.y = y;
@@ -431,7 +444,7 @@ function setupLighting(){
 
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
-        const p = new THREE.PointLight( cColor, 0.42, 500, 0.6);
+        const p = new THREE.PointLight( cColor, 0.01, 500, 2);
         const x = -resolutionW/2 + step *i;
         p.position.set(x, 0, 100);
         
@@ -482,17 +495,17 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
             mesh = new THREE.Mesh(geometry, material0);
         }
 
-        const sx = globalScale * scaleX;
-        const sy = globalScale * scaleY;
-        const w = resolutionW  * scaleX;
-        const h = resolutionH  * scaleY;
-        const centerX = -w/2;
-        const centerY = -h/2;
+        const sx = globalScale * scaleX * svgScaleX;
+        const sy = globalScale * scaleY * svgScaleY;
+        const w = resolutionW;
+        const h = resolutionH;
+        const centerX = -w/2 * scaleX;
+        const centerY = -h/2 * scaleY;
         
         mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
         //console.log(sx, sy, w, h, centerX, centerY);
-        mesh.layers.disable( BLOOM_SCENE );
+        // mesh.layers.disable( BLOOM_SCENE );
 
         svgGroup.add(mesh);
       });
@@ -555,11 +568,11 @@ function animateEmitterColor(){
 
     let colors = [color1, color2, color3];
 
-    const numPL = pointLights.length; // expect 6
+    const numPL = emitters.length; // expect 6
 
     for(let i=0; i<numPL/2; i++){
-        pointLights[i].color.setHex(colors[i]);
-        pointLights[i+numPL/2].color.setHex(colors[i]);
+        emitters[i].material.color.setHex(colors[i]);
+        emitters[i+numPL/2].material.color.setHex(colors[i]);
     }
 }
 
