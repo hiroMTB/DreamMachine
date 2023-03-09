@@ -24,17 +24,12 @@ let bloomPass;
 let finalPass;
 let finalComposer;
 
-let svgW = 180;
-let svgH = 150;
 const pX = 64; // pixelcount X
 const pY = 32; // pixelcount Y
 const tX = 4; // tiles horizontal
 const tY = 7; // tiles vertical
 const resolutionW = pX * tX * globalScale;
 const resolutionH = pY * tY * globalScale;
-let svgScaleX = resolutionW / svgW;
-let svgScaleY = resolutionH / svgH;
-
 let origin = 0;
 let prospect2scaleY = 0.95;
 
@@ -53,15 +48,16 @@ let stats;
 // color
 const startTime = Date.now();
 
+let gui;
 const params = {
     debug: false,
     camera: 'ortho',
-    speed: 3.5,
+    speed: 0.5,
     colorSpeed: 1/(23.0*60),
 
     exposure: 1,
     bloomStrength: 5,
-    bloomThreshold: 0.1,
+    bloomThreshold: 0.07,
     bloomRadius: 1,
     scene: 'Scene with Glow'
 };
@@ -156,7 +152,7 @@ function setupGUI(){
     const container = document.getElementById("container");
     container.appendChild(stats.dom);
 
-    const gui = new GUI();
+    gui = new GUI();
     gui.add( params, 'debug')
     .onChange(value=>{ setDebugMode(value)})
     gui.add( params, 'speed', 0, 3);
@@ -186,7 +182,7 @@ function setupGUI(){
         //render();
     } );
 
-    folder.add( params, 'bloomThreshold', 0.0, 2 ).onChange( function ( value ) {
+    folder.add( params, 'bloomThreshold', 0.0, 1.2 ).onChange( function ( value ) {
         bloomPass.threshold = Number( value );
         // render();
     } );
@@ -235,15 +231,12 @@ function setupProspects(){
 function setupEmitter(){
 
     const geometry = new THREE.IcosahedronGeometry( 20, 8 );
+    // const geometry = new THREE.SphereGeometry( 16, 4, 4 );
     for(let i=0; i<6; i++){
-        const color = new THREE.Color(0xffffff);        
-
+        const color = new THREE.Color(0xffffff);
         const material = new THREE.MeshBasicMaterial( { color: color } );
         const sphere = new THREE.Mesh( geometry, material );
-        sphere.position.x = Math.random() * 400 - 10;
-        sphere.position.y = Math.random() * 400 - 10;
-        sphere.position.z = Math.random() * 400 - 10;
-        // sphere.position.normalize().multiplyScalar( Math.random() * 4.0 + 2.0 );
+        sphere.position.set(0,0,0);
         scene.add( sphere );
         sphere.layers.enable( BLOOM_SCENE );
 
@@ -299,9 +292,9 @@ function animateEmitter(timer){
     const numPL = emitters.length; // expect 6
 
     for(let i=0; i<numPL/2; i++){
-        const x = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 4 * (i+1)*0.2) * resolutionW/2;
-        const y = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 2 * (i+1)*0.2) * resolutionH/2;
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.2) * 500;
+        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 2 * (i+1)*0.4) * resolutionW/2;
+        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 5 * (i+1)*0.4) * resolutionH/2;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.4) * 500;
 
         emitters[i].position.x = x;
         emitters[i].position.y = y;
@@ -328,6 +321,8 @@ function setDebugMode(debug){
     for(let h of centerLightHelpers){
         h.visible = debug;
     }
+
+    // debug ? gui.show() : gui.hide();
 }
 
 function setupLighting(){
@@ -337,14 +332,14 @@ function setupLighting(){
     // point light array
     centerLights = [];
     centerLightHelpers = [];
-    const nCenterLights = 10;
+    const nCenterLights = 6;
 
     // 2800K = rgb(255, 173, 94) = 0xFFAD5E
-    const cColor = 0xaaaaaa;
+    const cColor = 0xcccccc;
 
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
-        const p = new THREE.PointLight( cColor, 0.5, 180, 1);
+        const p = new THREE.PointLight( cColor, 0.75, 220, 1);
         const x = -resolutionW/2 + step * i;
         p.position.set(x, 0, -500);
         
@@ -383,8 +378,8 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
             mesh = new THREE.Mesh(geometry, material1);
         }
 
-        const sx = scaleX * svgScaleX;
-        const sy = scaleY * svgScaleY;
+        const sx = scaleX * globalScale;
+        const sy = scaleY * globalScale;
         const w = resolutionW;
         const h = resolutionH;
         const centerX = -w/2 * scaleX;
