@@ -10,7 +10,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { hsvToHEX } from './ColorConverter';
 
-const globalScale = 3;
+const globalScale = 1;
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
 
@@ -57,7 +57,7 @@ const params = {
 
     exposure: 1,
     bloomStrength: 5,
-    bloomThreshold: 0.07,
+    bloomThreshold: 0,
     bloomRadius: 1,
     scene: 'Scene with Glow'
 };
@@ -230,7 +230,7 @@ function setupProspects(){
 
 function setupEmitter(){
 
-    const geometry = new THREE.IcosahedronGeometry( 20, 8 );
+    const geometry = new THREE.IcosahedronGeometry( 14, 8 );
     // const geometry = new THREE.SphereGeometry( 16, 4, 4 );
     for(let i=0; i<6; i++){
         const color = new THREE.Color(0xffffff);
@@ -248,7 +248,7 @@ function setupEmitter(){
         const texture = new THREE.Texture( generateTexture() );
         texture.needsUpdate = true;
          const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
-        // const material = new THREE.MeshBasicMaterial( { color: 0x333333 } );
+        // const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
 
         const eScreen1 = new THREE.Mesh( geometry, material );
         eScreen1.position.set(0, 0, -600);
@@ -256,11 +256,6 @@ function setupEmitter(){
         eScreen1.layers.disable( BLOOM_SCENE );
         eScreen1.layers.enable( ENTIRE_SCENE );
         scene.add( eScreen1 );
-
-        // const eScreen2 = new THREE.Mesh( geometry, material );
-        // eScreen2.position.set(0, 0, -300);
-        // eScreen2.receiveShadow = true;
-        // scene.add( eScreen2 );
     }
 }
 
@@ -332,14 +327,14 @@ function setupLighting(){
     // point light array
     centerLights = [];
     centerLightHelpers = [];
-    const nCenterLights = 6;
+    const nCenterLights = 5;
 
     // 2800K = rgb(255, 173, 94) = 0xFFAD5E
-    const cColor = 0xcccccc;
+    const cColor = 0xffffff;
 
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
-        const p = new THREE.PointLight( cColor, 0.75, 220, 1);
+        const p = new THREE.PointLight( cColor, 3, 300, 3.5);
         const x = -resolutionW/2 + step * i;
         p.position.set(x, 0, -500);
         
@@ -356,6 +351,10 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
     const svgMarkup = svgElement.outerHTML;
     const loader = new SVGLoader();
     const svgData = loader.parse(svgMarkup);
+    
+    const svgW = svgData.xml.width.baseVal.value;
+    const svgH = svgData.xml.height.baseVal.value;
+    console.log( "svg", id, svgW, "x", svgH);
 
     const svgGroup = new THREE.Group();
     const texture = new THREE.Texture( generateTexture() );
@@ -380,14 +379,13 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
 
         const sx = scaleX * globalScale;
         const sy = scaleY * globalScale;
-        const w = resolutionW;
-        const h = resolutionH;
-        const centerX = -w/2 * scaleX;
-        const centerY = -h/2 * scaleY;
+        const centerX = -svgW/2 * sx;
+        const centerY = -svgH/2 * sx;
         
         mesh.position.set(centerX+x, centerY+y, z);
         mesh.scale.set(sx, sy, globalScale);
-        //console.log(sx, sy, w, h, centerX, centerY);
+        console.log(sx, sy, centerX, centerY);
+        
         mesh.layers.disable( BLOOM_SCENE );
         mesh.layers.enable( ENTIRE_SCENE );
 
