@@ -56,7 +56,7 @@ const params = {
     colorSpeed: 1/(23.0*60),
 
     exposure: 1,
-    bloomStrength: 5,
+    bloomStrength: 4,
     bloomThreshold: 0,
     bloomRadius: 1,
     scene: 'Scene with Glow'
@@ -64,18 +64,24 @@ const params = {
 
 let emitters =[];
 let centerLights = [];
-let centerLightHelpers = [];
+// let centerLightHelpers = [];
 
 main();
 
 function main() {
 
-    renderer = new THREE.WebGLRenderer( {canvas, alpha: true, antialias: true});
+    renderer = new THREE.WebGLRenderer( 
+        {
+            canvas, 
+            alpha: true,
+            antialias: true,
+            powerPreference: "high-performance",
+            // physicallyCorrectLights: true    
+        }
+    );
     const bg = new THREE.Color(0,0,0);
     renderer.setClearColor(bg, 1);    
-    renderer.setSize( resolutionW, resolutionH );
-    
-    // TODO: check
+    renderer.setSize( resolutionW, resolutionH );    
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.setPixelRatio( window.devicePixelRatio );
 
@@ -86,7 +92,7 @@ function main() {
     scene.children.length = 0;
 
     // Ortho Camera
-    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 10000);
+    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 3000);
     ortho.position.set(0, 0, 1100);
     ortho.lookAt(0,0,0);
     controlsOrtho = new OrbitControls( ortho, renderer.domElement );
@@ -208,7 +214,8 @@ function setupWall(){
 
     wall = new THREE.Mesh( geometry, material );
     wall.position.set(0, 0, -700);
-    wall.receiveShadow = true;
+    // wall.matrixAutoUpdate = false;
+    // wall.receiveShadow = true;
     wall.layers.disable( BLOOM_SCENE );
     wall.layers.enable( ENTIRE_SCENE );
     scene.add( wall );
@@ -230,25 +237,24 @@ function setupProspects(){
 
 function setupEmitter(){
 
-    const geometry = new THREE.IcosahedronGeometry( 14, 8 );
-    // const geometry = new THREE.SphereGeometry( 16, 4, 4 );
+    // const geometry = new THREE.IcosahedronGeometry( 14, 8 );
+    const geometry = new THREE.SphereBufferGeometry( 16, 10, 10 );
+    const color = new THREE.Color(0xffffff);
     for(let i=0; i<6; i++){
-        const color = new THREE.Color(0xffffff);
         const material = new THREE.MeshBasicMaterial( { color: color } );
         const sphere = new THREE.Mesh( geometry, material );
         sphere.position.set(0,0,0);
         scene.add( sphere );
         sphere.layers.enable( BLOOM_SCENE );
-
         emitters.push(sphere);
     }
 
     {
-        const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
+        const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
         const texture = new THREE.Texture( generateTexture() );
         texture.needsUpdate = true;
-         const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
-        // const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
+        //  const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
+        const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
 
         const eScreen1 = new THREE.Mesh( geometry, material );
         eScreen1.position.set(0, 0, -600);
@@ -313,11 +319,11 @@ function animateEmitter(timer){
 function setDebugMode(debug){
     
     // Helpers
-    for(let h of centerLightHelpers){
-        h.visible = debug;
-    }
+    // for(let h of centerLightHelpers){
+    //     h.visible = debug;
+    // }
 
-    // debug ? gui.show() : gui.hide();
+    debug ? gui.show() : gui.hide();
 }
 
 function setupLighting(){
@@ -326,7 +332,7 @@ function setupLighting(){
 
     // point light array
     centerLights = [];
-    centerLightHelpers = [];
+    // centerLightHelpers = [];
     const nCenterLights = 5;
 
     // 2800K = rgb(255, 173, 94) = 0xFFAD5E
@@ -337,12 +343,11 @@ function setupLighting(){
         const p = new THREE.PointLight( cColor, 3, 300, 3.5);
         const x = -resolutionW/2 + step * i;
         p.position.set(x, 0, -500);
-        
-        const helper = new THREE.PointLightHelper( p, 10 );
-        scene.add( p, helper );
-        
         centerLights.push(p);
-        centerLightHelpers.push(helper);
+
+        // const helper = new THREE.PointLightHelper( p, 10 );
+        // scene.add( p, helper );
+        // centerLightHelpers.push(helper);
     }
 }
 
