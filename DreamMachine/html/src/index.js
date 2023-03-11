@@ -204,10 +204,7 @@ function setupGUI(){
 
 function setupWall(){
      
-    const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
-    const texture = new THREE.Texture( generateTexture() );
-    texture.needsUpdate = true;
-    // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, side:THREE.DoubleSide } ) ;
+    const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
     const material = new THREE.MeshBasicMaterial( { color: 0x111111 } );
 
     wall = new THREE.Mesh( geometry, material );
@@ -220,10 +217,13 @@ function setupWall(){
 
 function setupProspects(){
     prospects = [];
-    prospects.push( loadSvg(document.getElementById('svg0'), 0, 0, 0,  200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg0'), 1, 0, 0,  200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), 2, 0, 0,  -300, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), 3, 0, 0,  -300, 1, prospect2scaleY));
+    const material0 = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
+    const material1 = new THREE.MeshPhongMaterial( {color: 0xffffff, transparent: false, side: THREE.DoubleSide, specular: 0xaaaaaa, shininess: 20} );
+    
+    prospects.push( loadSvg(document.getElementById('svg0'), material0, 200, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg0'), material0, 200, 1, 1));
+    prospects.push( loadSvg(document.getElementById('svg1'), material1, -300, 1, prospect2scaleY));
+    prospects.push( loadSvg(document.getElementById('svg1'), material1, -300, 1, prospect2scaleY));
 
     for(let p of prospects){
         p.layers.disable( BLOOM_SCENE );
@@ -356,18 +356,13 @@ function setupLighting(){
     }
 }
 
-function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
+function loadSvg( svgElement, material, z, scaleX, scaleY){
 
     const svgMarkup = svgElement.outerHTML;
     const loader = new SVGLoader();
     const svgData = loader.parse(svgMarkup);
 
     const svgGroup = new THREE.Group();
-    const texture = new THREE.Texture( generateTexture() );
-    texture.needsUpdate = true;
-    // const material = new THREE.MeshLambertMaterial( { map: texture, transparent: false, side: THREE.DoubleSide } ) ;
-    const material0 = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
-    const material1 = new THREE.MeshPhongMaterial( {color: 0xffffff, transparent: false, side: THREE.DoubleSide, specular: 0xaaaaaa, shininess: 20} );
 
     // Loop through all of the parsed paths
     svgData.paths.forEach((path, i) => {
@@ -376,13 +371,7 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
       // Each path has array of shapes
       shapes.forEach((shape, j) => {
         const geometry = new THREE.ShapeGeometry(shape);
-        let mesh;
-        if(id<=1){
-            mesh = new THREE.Mesh(geometry, material0);
-        }else{
-            mesh = new THREE.Mesh(geometry, material1);
-        }
-
+        const mesh = new THREE.Mesh(geometry, material);
         const sx = scaleX * svgScaleX;
         const sy = scaleY * svgScaleY;
         const w = resolutionW;
@@ -390,7 +379,7 @@ function loadSvg( svgElement, id, x, y, z, scaleX, scaleY){
         const centerX = -w/2 * scaleX;
         const centerY = -h/2 * scaleY;
         
-        mesh.position.set(centerX+x, centerY+y, z);
+        mesh.position.set(centerX, centerY, z);
         mesh.scale.set(sx, sy, globalScale);
         //console.log(sx, sy, w, h, centerX, centerY);
         mesh.layers.disable( BLOOM_SCENE );
@@ -496,6 +485,12 @@ function render() {
     }
     //renderer.render( scene, camera );
     stats.end();
+
+    console.log("Scene polycount:", renderer.info.render.triangles)
+    console.log("Active Drawcalls:", renderer.info.render.calls)
+    console.log("Textures in Memory", renderer.info.memory.textures)
+    console.log("Geometries in Memory", renderer.info.memory.geometries)
+    console.log("Number of Triangles :", renderer.info.render.triangles);
 };
 
 function renderBloom( mask ) {
