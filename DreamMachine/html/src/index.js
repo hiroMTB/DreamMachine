@@ -64,6 +64,7 @@ const params = {
 };
 
 let emitters =[];
+let emitterMaterials =[];
 let centerLights = [];
 // let centerLightHelpers = [];
 
@@ -305,15 +306,19 @@ function makeMeshFromGeoms( geoms, svgData, material, z, scaleX, scaleY ){
 function setupEmitter(){
 
     // const geometry = new THREE.IcosahedronGeometry( 14, 8 );
-    const geometry = new THREE.SphereBufferGeometry( 16, 10, 10 );
+    const geometry = new THREE.SphereBufferGeometry( 10, 10, 10 );
     const color = new THREE.Color(0xffffff);
-    for(let i=0; i<6; i++){
+    for(let i=0; i<3; i++){
         const material = new THREE.MeshBasicMaterial( { color: color } );
-        const sphere = new THREE.Mesh( geometry, material );
-        sphere.position.set(0,0,0);
-        scene.add( sphere );
-        sphere.layers.enable( BLOOM_SCENE );
-        emitters.push(sphere);
+        emitterMaterials.push(material);
+
+        for(let j=0; j<2; j++){
+            const sphere = new THREE.Mesh( geometry, material );
+            sphere.position.set(0,0,0);
+            scene.add( sphere );
+            sphere.layers.enable( BLOOM_SCENE );
+            emitters.push(sphere);
+        }
     }
 
     {
@@ -364,12 +369,12 @@ function animateEmitter(timer){
         const y = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 5 * (i+1)*0.4) * resolutionH/2;
         const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.4) * 500;
 
-        emitters[i].position.x = x;
-        emitters[i].position.y = y;
-        emitters[i].position.z = z;
+        emitters[i*2].position.x = x;
+        emitters[i*2].position.y = y;
+        emitters[i*2].position.z = z;
         // z: -300 ~ 300 -> 0.5 ~ 1.5
-        let scale = mapVal(z, -300, 300, 0.5, 1.5, true);
-        emitters[i].scale.set(scale,scale,scale);
+        let scale = mapVal(z, -300, 300, 0.75, 1.25, true);
+        emitters[i*2].scale.set(scale,scale,scale);
 
         let size = resolutionW;
         
@@ -380,12 +385,12 @@ function animateEmitter(timer){
         else if(size/2<x2) x2 = x2-size;
 
         if(x2 < -size/2) x2 = size/2 + x2
-        emitters[i+numPL/2].position.x =  x2;
-        emitters[i+numPL/2].position.y =  y;
-        emitters[i+numPL/2].position.z = -z;
+        emitters[i*2+1].position.x =  x2;
+        emitters[i*2+1].position.y =  y;
+        emitters[i*2+1].position.z = -z;
 
         let scale2 = mapVal(-z, -300, 300, 0.5, 1.5, true);
-        emitters[i+numPL/2].scale.set(scale2, scale2, scale2);
+        emitters[i*2+1].scale.set(scale2, scale2, scale2);
     }
 }
 
@@ -479,9 +484,9 @@ function changeEmitterColor(){
 
     const numPL = emitters.length; // expect 6
 
-    for(let i=0; i<numPL/2; i++){
-        emitters[i].material.color.setHex(colors[i]);
-        emitters[i+numPL/2].material.color.setHex(colors[i]);
+    for(let i=0; i<emitterMaterials.length; i++){
+        emitterMaterials[i].color.setHex(colors[i]);
+        emitterMaterials[i].color.setHex(colors[i]);
     }
 }
 
