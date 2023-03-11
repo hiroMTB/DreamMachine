@@ -33,4 +33,4 @@ function convert(integer) {
     return str.length == 1 ? "0" + str : str;
 }
 
-export { hsvToHEX };
+export default hsvToHEX;

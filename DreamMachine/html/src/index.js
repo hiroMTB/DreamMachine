@@ -8,7 +8,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { hsvToHEX } from './ColorConverter';
+import hsvToHEX from './ColorConverter';
+import mapVal from './Utils';
 
 const globalScale = 3;
 
@@ -366,6 +367,9 @@ function animateEmitter(timer){
         emitters[i].position.x = x;
         emitters[i].position.y = y;
         emitters[i].position.z = z;
+        // z: -300 ~ 300 -> 0.5 ~ 1.5
+        let scale = mapVal(z, -300, 300, 0.5, 1.5, true);
+        emitters[i].scale.set(scale,scale,scale);
 
         let size = resolutionW;
         
@@ -379,6 +383,9 @@ function animateEmitter(timer){
         emitters[i+numPL/2].position.x =  x2;
         emitters[i+numPL/2].position.y =  y;
         emitters[i+numPL/2].position.z = -z;
+
+        let scale2 = mapVal(-z, -300, 300, 0.5, 1.5, true);
+        emitters[i+numPL/2].scale.set(scale2, scale2, scale2);
     }
 }
 
