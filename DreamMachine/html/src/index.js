@@ -24,17 +24,12 @@ let bloomPass;
 let finalPass;
 let finalComposer;
 
-let svgW = 180;
-let svgH = 150;
 const pX = 64; // pixelcount X
 const pY = 32; // pixelcount Y
 const tX = 4; // tiles horizontal
 const tY = 7; // tiles vertical
 const resolutionW = pX * tX * globalScale;
 const resolutionH = pY * tY * globalScale;
-let svgScaleX = resolutionW / svgW;
-let svgScaleY = resolutionH / svgH;
-
 let origin = 0;
 let prospect2scaleY = 0.95;
 
@@ -53,33 +48,40 @@ let stats;
 // color
 const startTime = Date.now();
 
+let gui;
 const params = {
     debug: false,
     camera: 'ortho',
-    speed: 3.5,
+    speed: 0.5,
     colorSpeed: 1/(23.0*60),
 
     exposure: 1,
-    bloomStrength: 5,
-    bloomThreshold: 0.1,
+    bloomStrength: 4,
+    bloomThreshold: 0,
     bloomRadius: 1,
     scene: 'Scene with Glow'
 };
 
 let emitters =[];
 let centerLights = [];
-let centerLightHelpers = [];
+// let centerLightHelpers = [];
 
 main();
 
 function main() {
 
-    renderer = new THREE.WebGLRenderer( {canvas, alpha: true, antialias: true});
+    renderer = new THREE.WebGLRenderer( 
+        {
+            canvas, 
+            alpha: true,
+            antialias: true,
+            powerPreference: "high-performance",
+            // physicallyCorrectLights: true    
+        }
+    );
     const bg = new THREE.Color(0,0,0);
     renderer.setClearColor(bg, 1);    
-    renderer.setSize( resolutionW, resolutionH );
-    
-    // TODO: check
+    renderer.setSize( resolutionW, resolutionH );    
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.setPixelRatio( window.devicePixelRatio );
 
@@ -90,7 +92,7 @@ function main() {
     scene.children.length = 0;
 
     // Ortho Camera
-    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 10000);
+    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 3000);
     ortho.position.set(0, 0, 1100);
     ortho.lookAt(0,0,0);
     controlsOrtho = new OrbitControls( ortho, renderer.domElement );
@@ -156,7 +158,7 @@ function setupGUI(){
     const container = document.getElementById("container");
     container.appendChild(stats.dom);
 
-    const gui = new GUI();
+    gui = new GUI();
     gui.add( params, 'debug')
     .onChange(value=>{ setDebugMode(value)})
     gui.add( params, 'speed', 0, 3);
@@ -186,7 +188,7 @@ function setupGUI(){
         //render();
     } );
 
-    folder.add( params, 'bloomThreshold', 0.0, 2 ).onChange( function ( value ) {
+    folder.add( params, 'bloomThreshold', 0.0, 1.2 ).onChange( function ( value ) {
         bloomPass.threshold = Number( value );
         // render();
     } );
@@ -209,7 +211,8 @@ function setupWall(){
 
     wall = new THREE.Mesh( geometry, material );
     wall.position.set(0, 0, -700);
-    wall.receiveShadow = true;
+    // wall.matrixAutoUpdate = false;
+    // wall.receiveShadow = true;
     wall.layers.disable( BLOOM_SCENE );
     wall.layers.enable( ENTIRE_SCENE );
     scene.add( wall );
@@ -217,13 +220,27 @@ function setupWall(){
 
 function setupProspects(){
     prospects = [];
-    const material0 = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
-    const material1 = new THREE.MeshPhongMaterial( {color: 0xffffff, transparent: false, side: THREE.DoubleSide, specular: 0xaaaaaa, shininess: 20} );
     
-    prospects.push( loadSvg(document.getElementById('svg0'), material0, 200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg0'), material0, 200, 1, 1));
-    prospects.push( loadSvg(document.getElementById('svg1'), material1, -300, 1, prospect2scaleY));
-    prospects.push( loadSvg(document.getElementById('svg1'), material1, -300, 1, prospect2scaleY));
+    {
+        // prospect 0
+        const svgTag = document.getElementById('svg0');
+        const svgData = loadSvg(svgTag);
+        const geoms = makeGeomFromSvgData(svgData);
+        const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1));
+    }
+
+    {
+        // prospect 1
+        const svgTag = document.getElementById('svg1');
+        const svgData = loadSvg(svgTag);
+        const geoms = makeGeomFromSvgData(svgData);
+        // const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
+        const material = new THREE.MeshPhongMaterial( {color: 0xffffff, transparent: false, side: THREE.DoubleSide, specular: 0xaaaaaa, shininess: 20} );
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY));
+    }    
 
     for(let p of prospects){
         p.layers.disable( BLOOM_SCENE );
@@ -232,30 +249,78 @@ function setupProspects(){
     }
 }
 
+function loadSvg( svgElement ){    
+    const svgMarkup = svgElement.outerHTML;
+    const loader = new SVGLoader();
+    const svgData = loader.parse(svgMarkup);
+    return svgData;
+}
+
+function makeGeomFromSvgData( svgData ){
+    let geoms = [];
+    console.log( "  found", svgData.paths.length, "paths");
+
+    // Loop through all of the parsed paths
+    svgData.paths.forEach((path, i) => {
+      const shapes = SVGLoader.createShapes(path);
+    
+      // Each path has array of shapes
+      shapes.forEach((shape, j) => {
+        console.log( "    shape", j );
+        const geometry = new THREE.ShapeGeometry(shape);
+        geoms.push(geometry);
+      });
+    });
+    return geoms;
+}
+
+function makeMeshFromGeoms( geoms, svgData, material, z, scaleX, scaleY ){
+
+    const svgW = svgData.xml.width.baseVal.value;
+    const svgH = svgData.xml.height.baseVal.value;
+
+    const svgGroup = new THREE.Group();
+    
+    geoms.forEach((geometry, j) => {
+        let mesh = new THREE.Mesh(geometry, material);
+        const sx = scaleX * globalScale;
+        const sy = scaleY * globalScale;
+        const centerX = -svgW/2 * sx;
+        const centerY = -svgH/2 * sx;
+        
+        mesh.position.set(centerX, centerY, z);
+        mesh.scale.set(sx, sy, globalScale);
+        // console.log(sx, sy, centerX, centerY);
+        
+        mesh.layers.disable( BLOOM_SCENE );
+        mesh.layers.enable( ENTIRE_SCENE );
+
+        svgGroup.add(mesh);
+    });
+
+  return svgGroup;
+}
+
 function setupEmitter(){
 
-    const geometry = new THREE.IcosahedronGeometry( 20, 8 );
+    // const geometry = new THREE.IcosahedronGeometry( 14, 8 );
+    const geometry = new THREE.SphereBufferGeometry( 16, 10, 10 );
+    const color = new THREE.Color(0xffffff);
     for(let i=0; i<6; i++){
-        const color = new THREE.Color(0xffffff);        
-
         const material = new THREE.MeshBasicMaterial( { color: color } );
         const sphere = new THREE.Mesh( geometry, material );
-        sphere.position.x = Math.random() * 400 - 10;
-        sphere.position.y = Math.random() * 400 - 10;
-        sphere.position.z = Math.random() * 400 - 10;
-        // sphere.position.normalize().multiplyScalar( Math.random() * 4.0 + 2.0 );
+        sphere.position.set(0,0,0);
         scene.add( sphere );
         sphere.layers.enable( BLOOM_SCENE );
-
         emitters.push(sphere);
     }
 
     {
-        const geometry = new THREE.BoxGeometry( resolutionW, resolutionH, 1 );
+        const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
         const texture = new THREE.Texture( generateTexture() );
         texture.needsUpdate = true;
-         const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
-        // const material = new THREE.MeshBasicMaterial( { color: 0x333333 } );
+        //  const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
+        const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
 
         const eScreen1 = new THREE.Mesh( geometry, material );
         eScreen1.position.set(0, 0, -600);
@@ -263,11 +328,6 @@ function setupEmitter(){
         eScreen1.layers.disable( BLOOM_SCENE );
         eScreen1.layers.enable( ENTIRE_SCENE );
         scene.add( eScreen1 );
-
-        // const eScreen2 = new THREE.Mesh( geometry, material );
-        // eScreen2.position.set(0, 0, -300);
-        // eScreen2.receiveShadow = true;
-        // scene.add( eScreen2 );
     }
 }
 
@@ -299,9 +359,9 @@ function animateEmitter(timer){
     const numPL = emitters.length; // expect 6
 
     for(let i=0; i<numPL/2; i++){
-        const x = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 4 * (i+1)*0.2) * resolutionW/2;
-        const y = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 2 * (i+1)*0.2) * resolutionH/2;
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.2) * 500;
+        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 2 * (i+1)*0.4) * resolutionW/2;
+        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 5 * (i+1)*0.4) * resolutionH/2;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.4) * 500;
 
         emitters[i].position.x = x;
         emitters[i].position.y = y;
@@ -325,9 +385,11 @@ function animateEmitter(timer){
 function setDebugMode(debug){
     
     // Helpers
-    for(let h of centerLightHelpers){
-        h.visible = debug;
-    }
+    // for(let h of centerLightHelpers){
+    //     h.visible = debug;
+    // }
+
+    debug ? gui.show() : gui.hide();
 }
 
 function setupLighting(){
@@ -336,60 +398,23 @@ function setupLighting(){
 
     // point light array
     centerLights = [];
-    centerLightHelpers = [];
-    const nCenterLights = 10;
+    // centerLightHelpers = [];
+    const nCenterLights = 5;
 
     // 2800K = rgb(255, 173, 94) = 0xFFAD5E
-    const cColor = 0xaaaaaa;
+    const cColor = 0xffffff;
 
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
-        const p = new THREE.PointLight( cColor, 0.5, 180, 1);
+        const p = new THREE.PointLight( cColor, 3, 300, 3.5);
         const x = -resolutionW/2 + step * i;
         p.position.set(x, 0, -500);
-        
-        const helper = new THREE.PointLightHelper( p, 10 );
-        scene.add( p, helper );
-        
         centerLights.push(p);
-        centerLightHelpers.push(helper);
+
+        // const helper = new THREE.PointLightHelper( p, 10 );
+        // scene.add( p, helper );
+        // centerLightHelpers.push(helper);
     }
-}
-
-function loadSvg( svgElement, material, z, scaleX, scaleY){
-
-    const svgMarkup = svgElement.outerHTML;
-    const loader = new SVGLoader();
-    const svgData = loader.parse(svgMarkup);
-
-    const svgGroup = new THREE.Group();
-
-    // Loop through all of the parsed paths
-    svgData.paths.forEach((path, i) => {
-      const shapes = SVGLoader.createShapes(path);
-    
-      // Each path has array of shapes
-      shapes.forEach((shape, j) => {
-        const geometry = new THREE.ShapeGeometry(shape);
-        const mesh = new THREE.Mesh(geometry, material);
-        const sx = scaleX * svgScaleX;
-        const sy = scaleY * svgScaleY;
-        const w = resolutionW;
-        const h = resolutionH;
-        const centerX = -w/2 * scaleX;
-        const centerY = -h/2 * scaleY;
-        
-        mesh.position.set(centerX, centerY, z);
-        mesh.scale.set(sx, sy, globalScale);
-        //console.log(sx, sy, w, h, centerX, centerY);
-        mesh.layers.disable( BLOOM_SCENE );
-        mesh.layers.enable( ENTIRE_SCENE );
-
-        svgGroup.add(mesh);
-      });
-    });
-    
-    return svgGroup;
 }
 
 function generateTexture() {
@@ -486,11 +511,11 @@ function render() {
     //renderer.render( scene, camera );
     stats.end();
 
-    console.log("Scene polycount:", renderer.info.render.triangles)
-    console.log("Active Drawcalls:", renderer.info.render.calls)
-    console.log("Textures in Memory", renderer.info.memory.textures)
-    console.log("Geometries in Memory", renderer.info.memory.geometries)
-    console.log("Number of Triangles :", renderer.info.render.triangles);
+    // console.log("Scene polycount:", renderer.info.render.triangles)
+    // console.log("Active Drawcalls:", renderer.info.render.calls)
+    // console.log("Textures in Memory", renderer.info.memory.textures)
+    // console.log("Geometries in Memory", renderer.info.memory.geometries)
+    // console.log("Number of Triangles :", renderer.info.render.triangles);
 };
 
 function renderBloom( mask ) {
