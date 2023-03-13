@@ -11,7 +11,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
 
-const globalScale = 1;
+const globalScale = 3;
 const params = {
     debug: true,
 
@@ -30,7 +30,8 @@ const params = {
 };
 
 // Kerim Wall color
-const wallColor = 0xF0F0F0;
+const wallColor = 0x333333;
+const wall_z = -700;
 
 // Kerim position P0 on z axis
 const prospect0_z = 200;
@@ -38,18 +39,13 @@ const prospect0_z = 200;
 // Kerim position P1 on z axis
 const prospect1_z = -300;
 
-// Kerim postion Center Light on z axis (x, y, z)
-const eScreen_z = -299;
-const eScreenOpacity = 0.4;
-
 //Kerim Centerlight parameters below
 const nCenterLights= 9;
-const cColor= 0xffffff;
-const intensity= 10;
-const distance= 120;
-const decay= 2; // Kerim Intesitiy Gradient
-const centerLight_z= 75;
-
+const cColor= 0xaaaaaa;
+const intensity= 2;
+const distance= 300;
+const decay= 1;
+const centerLight_z= -250;
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
 
@@ -130,16 +126,7 @@ function main() {
     setupEmitter();
     setupWall();
     setupProspects();
-    setupLighting();  
-
-    if(0){
-        const size = 1000;
-        const divisions = 25;
-        gridHelper = new THREE.GridHelper( size, divisions );
-        // gridHelper.position.set(0,-resolutionH/2,0);
-        scene.add( gridHelper );
-        gridHelper.layers.disable( BLOOM_SCENE );
-    }
+    setupLighting(); 
     setupGUI();
 
     setDebugMode(params.debug);
@@ -237,11 +224,11 @@ function setupWall(){
     const material = new THREE.MeshBasicMaterial( { color: wallColor } ); 
 
     wall = new THREE.Mesh( geometry, material );
-    wall.position.set(0, 0, -700);
+    wall.position.set(0, 0, wall_z);
     // wall.matrixAutoUpdate = false;
     // wall.receiveShadow = true;
     wall.layers.disable( BLOOM_SCENE );
-    wall.layers.enable( ENTIRE_SCENE );
+    // wall.layers.enable( ENTIRE_SCENE );
     scene.add( wall );
 }
 
@@ -264,14 +251,14 @@ function setupProspects(){
         const svgData = loadSvg(svgTag);
         const geoms = makeGeomFromSvgData(svgData);
         // const material = new THREE.MeshBasicMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide} );
-        const material = new THREE.MeshPhongMaterial( {color: 0x111111, transparent: false, side: THREE.DoubleSide, specular: 0x222222, shininess: 30} );
+        const material = new THREE.MeshPhongMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide, specular: 0x111111, shininess: 1} );
         prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
         prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
     }    
 
     for(let p of prospects){
         p.layers.disable( BLOOM_SCENE );
-        p.layers.enable( ENTIRE_SCENE );
+        // p.layers.enable( ENTIRE_SCENE );
         scene.add(p);
     }
 }
@@ -320,7 +307,7 @@ function makeMeshFromGeoms( geoms, svgData, material, z, scaleX, scaleY ){
         // console.log(sx, sy, centerX, centerY);
         
         mesh.layers.disable( BLOOM_SCENE );
-        mesh.layers.enable( ENTIRE_SCENE );
+        // mesh.layers.enable( ENTIRE_SCENE );
 
         svgGroup.add(mesh);
     });
@@ -354,21 +341,6 @@ function setupEmitter(){
             emitters[j].push(sphere);
         }
     }
-
-    {
-        const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
-        const texture = new THREE.Texture( generateTexture() );
-        texture.needsUpdate = true;
-        const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: eScreenOpacity, side:THREE.DoubleSide } ) ;        
-        // const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
-
-        const eScreen1 = new THREE.Mesh( geometry, material );
-        eScreen1.position.set(0, 0, eScreen_z);
-        // eScreen1.receiveShadow = true;
-        eScreen1.layers.disable( BLOOM_SCENE );
-        eScreen1.layers.enable( ENTIRE_SCENE );
-        scene.add( eScreen1 );
-    }
 }
 
 function disposeMaterial( obj ) {
@@ -401,7 +373,7 @@ function animateEmitter(timer){
     for(let i=0; i<num; i++){
         const x = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 2 * (i+1)*0.4) * resolutionW/2;
         const y = Math.sin( i * Math.PI * 0.3 + timer * 0.5 * 5 * (i+1)*0.4) * resolutionH/2;
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 3 * (i+1)*0.4) * 500;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 3 * (i+1)*0.4) * 400;
         const w = resolutionW;
 
         // emitter size mapping
@@ -429,59 +401,53 @@ function animateEmitter(timer){
         }
 
         let xB = x + w/2;
+        let zB = z;
         const scaleB = mapVal(-z, -300, 300, 0.5, 1.5, true);
         {
             // back side
             if(xB<-w/2) xB = w/2+xB;
             else if(w/2<xB) xB = xB - w;
             if(xB < -w/2) xB = w/2 + xB
-            emitters[3][i].position.set(xB, y, -z);
+            emitters[3][i].position.set(xB, y, zB);
             emitters[3][i].scale.set(scaleB, scaleB, scaleB);
         }
         
         {
             // back side left
             const xB2 = xB - w;
-            emitters[4][i].position.set(xB2, y, -z);
+            emitters[4][i].position.set(xB2, y, zB);
             emitters[4][i].scale.set(scaleB, scaleB, scaleB);
         }
         
         {
             // back side right
             const xB3 = xB + w;
-            emitters[5][i].position.set(xB3, y, -z);
+            emitters[5][i].position.set(xB3, y, zB);
             emitters[5][i].scale.set(scaleB, scaleB, scaleB);
         }
     }
 }
 
-function setDebugMode(debug){
-    
-    // Helpers
-    // for(let h of centerLightHelpers){
-    //     h.visible = debug;
-    // }
-
+function setDebugMode(debug){    
     debug ? gui.show() : gui.hide();
 }
 
 function setupLighting(){
     // Kerim Ambientlight everywhere
-    scene.add( new THREE.AmbientLight( 0xffffff, 0.0 ) );
+    // scene.add( new THREE.AmbientLight( 0xffffff, 0.0 ) );
 
     // point light array
     centerLights = [];
-    // centerLightHelpers = [];
     
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
         const p = new THREE.PointLight( cColor, intensity, distance, decay);
         const x = -resolutionW/2 + step * i;
-        p.position.set(x, 0, centerLight_z);
+        p.position.set(x, 0, centerLight_z );
         centerLights.push(p);
-        // const helper = new THREE.PointLightHelper( p, 10 );
         scene.add( p );
-        // centerLightHelpers.push(helper);
+        // const helper = new THREE.PointLightHelper( p, 10 );
+        // scene.add( helper );
     }
 }
 
