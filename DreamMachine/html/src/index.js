@@ -312,8 +312,8 @@ function makeMeshFromGeoms( geoms, svgData, material, z, scaleX, scaleY ){
         let mesh = new THREE.Mesh(geometry, material);
         const sx = scaleX * globalScale;
         const sy = scaleY * globalScale;
-        const centerX = -svgW/2 * sx;
-        const centerY = -svgH/2 * sx;
+        const centerX = -svgW/2 * sx * scaleX;
+        const centerY = -svgH/2 * sx * scaleY;
         
         mesh.position.set(centerX, centerY, z);
         mesh.scale.set(sx, sy, globalScale);
