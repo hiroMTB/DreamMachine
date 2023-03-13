@@ -38,10 +38,10 @@ class MyRenderPass{
 
             switch ( value ) 	{
                 case 'Scene with Glow':
-                    bloomComposer.renderToScreen = false;
+                    this.bloomComposer.renderToScreen = false;
                     break;
                 case 'Glow only':
-                    bloomComposer.renderToScreen = true;
+                    this.bloomComposer.renderToScreen = true;
                     break;
                 case 'Scene only':
                     break;
