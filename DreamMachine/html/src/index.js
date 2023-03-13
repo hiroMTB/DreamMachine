@@ -12,6 +12,44 @@ import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
 
 const globalScale = 1;
+const params = {
+    debug: true,
+
+    // Kerim prospect rotation speed
+    speed: 1.5,
+
+    // Kerim color change speed (smaller is faster)
+    colorSpeed: 1/(23.0*60),
+
+    // Kerim Bloom Parameters
+    exposure: 1,
+    bloomStrength: 3,
+    bloomThreshold: 0,
+    bloomRadius: 0.75,
+    scene: 'Scene with Glow'
+};
+
+// Kerim Wall color
+const wallColor = 0xF0F0F0;
+
+// Kerim position P0 on z axis
+const prospect0_z = 200;
+
+// Kerim position P1 on z axis
+const prospect1_z = -300;
+
+// Kerim postion Center Light on z axis (x, y, z)
+const eScreen_z = 0;
+const eScreenOpacity = 0.3;
+
+//Kerim Centerlight parameters below
+const nCenterLights= 5;
+const cColor= 0xffffff;
+const intensity= 3.2;
+const distance= 300;
+const decay= 1;
+const centerLight_z= 100;
+
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
 
@@ -50,43 +88,10 @@ let stats;
 const startTime = Date.now();
 
 let gui;
-const params = {
-    debug: true,
-    camera: 'ortho',
-
-    // Kerim prospect rotation speed
-    speed: 1.5,
-
-    // Kerim color change speed (smaller is faster)
-    colorSpeed: 1/(23.0*60),
-
-    // Kerim Bloom Parameters
-    exposure: 1,
-    bloomStrength: 3,
-    bloomThreshold: 0,
-    bloomRadius: 0.75,
-    scene: 'Scene with Glow'
-};
 
 let emitters =[[]];
 let emitterMaterials =[];
 let centerLights = [];
-// let centerLightHelpers = [];
-
-const supported = (() => {
-    try {
-if (typeof WebAssembly === "object"
-           && typeof WebAssembly.instantiate === "function") {
-           const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
-           if (module instanceof WebAssembly.Module)
-               return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
-       }
-   } catch (e) {
-   }
-   return false;
-})();
-
-console.log(supported ? "WebAssembly is supported" : "WebAssembly is not supported");   
 
 main();
 
@@ -229,7 +234,7 @@ function setupGUI(){
 function setupWall(){
      
     const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0xF0F0F0 } ); // Kerim Wall color
+    const material = new THREE.MeshBasicMaterial( { color: wallColor } ); 
 
     wall = new THREE.Mesh( geometry, material );
     wall.position.set(0, 0, -700);
@@ -249,8 +254,8 @@ function setupProspects(){
         const svgData = loadSvg(svgTag);
         const geoms = makeGeomFromSvgData(svgData);
         const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1)); // Kerim position P0 on z axis
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1)); // Kerim position P0 on z axis
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect0_z, 1, 1)); 
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect0_z, 1, 1));
     }
 
     {
@@ -260,8 +265,8 @@ function setupProspects(){
         const geoms = makeGeomFromSvgData(svgData);
         // const material = new THREE.MeshBasicMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide} );
         const material = new THREE.MeshPhongMaterial( {color: 0x111111, transparent: false, side: THREE.DoubleSide, specular: 0x222222, shininess: 30} );
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY)); // Kerim position P1 on z axis
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY)); // Kerim position P1 on z axis
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
     }    
 
     for(let p of prospects){
@@ -354,11 +359,11 @@ function setupEmitter(){
         const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
         const texture = new THREE.Texture( generateTexture() );
         texture.needsUpdate = true;
-         const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
+        const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: eScreenOpacity, side:THREE.DoubleSide } ) ;        
         // const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
 
         const eScreen1 = new THREE.Mesh( geometry, material );
-        eScreen1.position.set(0, 0, 0); // Kerim postion Center Light on z axis (x, y, z)
+        eScreen1.position.set(0, 0, eScreen_z);
         // eScreen1.receiveShadow = true;
         eScreen1.layers.disable( BLOOM_SCENE );
         eScreen1.layers.enable( ENTIRE_SCENE );
@@ -468,19 +473,11 @@ function setupLighting(){
     centerLights = [];
     // centerLightHelpers = [];
     
-    //Kerim Centerlight parameters below
-    // 2800K = rgb(255, 173, 94) = 0xFFAD5E
-    const nCenterLights = 5;
-    const cColor = 0xffffff;
-    const intensity = 3.2; //was 3
-    const distance = 300;
-    const decay = 1;
-
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
         const p = new THREE.PointLight( cColor, intensity, distance, decay);
         const x = -resolutionW/2 + step * i;
-        p.position.set(x, 0, 100); // Kerim Postion Center Light
+        p.position.set(x, 0, centerLight_z);
         centerLights.push(p);
         // const helper = new THREE.PointLightHelper( p, 10 );
         scene.add( p );
