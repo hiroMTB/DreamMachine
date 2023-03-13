@@ -11,9 +11,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
 
-const globalScale = 3;
+const globalScale = 1;
 const params = {
-    debug: true,
+    debug: false,
 
     // Kerim prospect rotation speed
     speed: 2.5,
@@ -30,7 +30,7 @@ const params = {
 };
 
 // Kerim Wall color
-const wallColor = 0x333333;
+const wallColor = 0x555555;
 const wall_z = -700;
 
 // Kerim position P0 on z axis
@@ -41,10 +41,10 @@ const prospect1_z = -300;
 
 //Kerim Centerlight parameters below
 const nCenterLights= 9;
-const cColor= 0xaaaaaa;
-const intensity= 2;
-const distance= 300;
-const decay= 1;
+const cColor= 0x888888;
+const intensity= 0.6;
+const distance= 200;
+const decay= 1.2;
 const centerLight_z= -250;
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
@@ -97,7 +97,7 @@ function main() {
         {
             canvas, 
             alpha: true,
-            antialias: true,
+            antialias: false,
             powerPreference: "high-performance",
             // physicallyCorrectLights: true
         }
