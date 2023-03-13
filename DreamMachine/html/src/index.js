@@ -99,7 +99,7 @@ function main() {
             alpha: true,
             antialias: true,
             powerPreference: "high-performance",
-            // physicallyCorrectLights: true    
+            // physicallyCorrectLights: true
         }
     );
     const bg = new THREE.Color(0,0,0);
@@ -371,14 +371,14 @@ function animateEmitter(timer){
     const num = emitters[0].length; // expect 3
 
     for(let i=0; i<num; i++){
-        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 2 * (i+1)*0.4) * resolutionW/2;
-        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.5 * 5 * (i+1)*0.4) * resolutionH/2;
+        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 2 * (i+1)*0.4) * resolutionW;
+        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.5 * 5 * (i+1)*0.4) * (resolutionH*0.4);
         const z = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 3 * (i+1)*0.4) * 400;
         const w = resolutionW;
 
         // emitter size mapping
         // mapVal(value, inputMin, inputMax, outputMin, outputMax, clamp) {
-        const scale = mapVal(z, -500, 500, 1.0, 2.0, true);
+        const scale = mapVal(z, -400, 400, 1.0, 2.0, true);
         
         {        
             // front, main emitter
