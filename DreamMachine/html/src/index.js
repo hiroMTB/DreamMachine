@@ -4,12 +4,9 @@ import { SVGLoader } from './SVGLoader';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
+import MyRenderPass from './Renderpass';
 
 const globalScale = 1;
 const params = {
@@ -19,14 +16,7 @@ const params = {
     speed: 2.5,
 
     // Kerim color change speed (smaller is faster)
-    colorSpeed: 1/(23.0*60),
-
-    // Kerim Bloom Parameters
-    exposure: 1,
-    bloomStrength: 3,
-    bloomThreshold: 0,
-    bloomRadius: 0.75,
-    scene: 'Scene with Glow'
+    colorSpeed: 1/(23.0*60)
 };
 
 // Kerim Wall color
@@ -50,18 +40,7 @@ const distance= 120;
 const decay= 2; // Kerim Intesitiy Gradient
 const centerLight_z= 75;
 
-
-const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
-
-const bloomLayer = new THREE.Layers();
-bloomLayer.set( BLOOM_SCENE );
-const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
-const materials = {};
-
-let bloomComposer;
-let bloomPass;
-let finalPass;
-let finalComposer;
+let myRenderPass;
 
 const pX = 64; // pixelcount X
 const pY = 32; // pixelcount Y
@@ -125,58 +104,18 @@ function main() {
     controlsOrtho = new OrbitControls( ortho, renderer.domElement );
         
     camera = ortho;
+    setupGUI();
 
-    setupRenderPass();
+    myRenderPass = new MyRenderPass();
+    myRenderPass.setupGui(gui);
+    myRenderPass.setupRenderPass(scene, camera, renderer, resolutionW, resolutionH);
     setupEmitter();
     setupWall();
     setupProspects();
     setupLighting();  
 
-    if(0){
-        const size = 1000;
-        const divisions = 25;
-        gridHelper = new THREE.GridHelper( size, divisions );
-        // gridHelper.position.set(0,-resolutionH/2,0);
-        scene.add( gridHelper );
-        gridHelper.layers.disable( BLOOM_SCENE );
-    }
-    setupGUI();
-
     setDebugMode(params.debug);
     render();
-}
-
-function setupRenderPass(){
-    const renderScene = new RenderPass( scene, camera );
-
-    bloomPass = new UnrealBloomPass( new THREE.Vector2( resolutionW, resolutionH ), 1.5, 0.4, 0.85 );
-    bloomPass.threshold = params.bloomThreshold;
-    bloomPass.strength = params.bloomStrength;
-    bloomPass.radius = params.bloomRadius;
-
-    bloomComposer = new EffectComposer( renderer );
-    bloomComposer.renderToScreen = false;
-    bloomComposer.addPass( renderScene );
-    bloomComposer.addPass( bloomPass );
-    bloomComposer.setSize( resolutionW, resolutionH );
-    
-    finalPass = new ShaderPass(
-        new THREE.ShaderMaterial( {
-            uniforms: {
-                baseTexture: { value: null },
-                bloomTexture: { value: bloomComposer.renderTarget2.texture }
-            },
-            vertexShader: document.getElementById( 'vertexshader' ).textContent,
-            fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
-            defines: {}
-        } ), 'baseTexture'
-    );
-    finalPass.needsSwap = true;
-
-    finalComposer = new EffectComposer( renderer );
-    finalComposer.setSize( resolutionW, resolutionH);
-    finalComposer.addPass( renderScene );
-    finalComposer.addPass( finalPass );
 }
 
 function setupGUI(){
@@ -190,45 +129,6 @@ function setupGUI(){
     .onChange(value=>{ setDebugMode(value)})
     gui.add( params, 'speed', 0, 3);
     gui.add( params, 'colorSpeed', 0.000000000001, 0.001);
-
-
-    gui.add( params, 'scene', [ 'Scene with Glow', 'Glow only', 'Scene only' ] ).onChange( function ( value ) {
-
-        switch ( value ) 	{
-            case 'Scene with Glow':
-                bloomComposer.renderToScreen = false;
-                break;
-            case 'Glow only':
-                bloomComposer.renderToScreen = true;
-                break;
-            case 'Scene only':
-                // nothing to do
-                break;
-        }
-        //render();
-    } );
-
-    const folder = gui.addFolder( 'Bloom Parameters' );
-
-    folder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
-        renderer.toneMappingExposure = Math.pow( value, 4.0 );
-        //render();
-    } );
-
-    folder.add( params, 'bloomThreshold', 0.0, 1.2 ).onChange( function ( value ) {
-        bloomPass.threshold = Number( value );
-        // render();
-    } );
-
-    folder.add( params, 'bloomStrength', 0.0, 10.0 ).onChange( function ( value ) {
-        bloomPass.strength = Number( value );
-        // render();
-    } );
-
-    folder.add( params, 'bloomRadius', 0.0, 10.0 ).step( 0.01 ).onChange( function ( value ) {
-        bloomPass.radius = Number( value );
-        // render();
-    } );
 }
 
 function setupWall(){
@@ -240,8 +140,8 @@ function setupWall(){
     wall.position.set(0, 0, -700);
     // wall.matrixAutoUpdate = false;
     // wall.receiveShadow = true;
-    wall.layers.disable( BLOOM_SCENE );
-    wall.layers.enable( ENTIRE_SCENE );
+    wall.layers.disable( MyRenderPass.BLOOM_SCENE );
+    wall.layers.enable( MyRenderPass.ENTIRE_SCENE );
     scene.add( wall );
 }
 
@@ -270,8 +170,8 @@ function setupProspects(){
     }    
 
     for(let p of prospects){
-        p.layers.disable( BLOOM_SCENE );
-        p.layers.enable( ENTIRE_SCENE );
+        p.layers.disable( MyRenderPass.LOOM_SCENE );
+        p.layers.enable( MyRenderPass.ENTIRE_SCENE );
         scene.add(p);
     }
 }
@@ -319,8 +219,8 @@ function makeMeshFromGeoms( geoms, svgData, material, z, scaleX, scaleY ){
         mesh.scale.set(sx, sy, globalScale);
         // console.log(sx, sy, centerX, centerY);
         
-        mesh.layers.disable( BLOOM_SCENE );
-        mesh.layers.enable( ENTIRE_SCENE );
+        mesh.layers.disable( MyRenderPass.BLOOM_SCENE );
+        mesh.layers.enable( MyRenderPass.ENTIRE_SCENE );
 
         svgGroup.add(mesh);
     });
@@ -350,7 +250,7 @@ function setupEmitter(){
             const sphere = new THREE.Mesh( geometry, material );
             sphere.position.set(0,0,0);
             scene.add( sphere );
-            sphere.layers.enable( BLOOM_SCENE );
+            sphere.layers.enable( MyRenderPass.BLOOM_SCENE );
             emitters[j].push(sphere);
         }
     }
@@ -365,8 +265,8 @@ function setupEmitter(){
         const eScreen1 = new THREE.Mesh( geometry, material );
         eScreen1.position.set(0, 0, eScreen_z);
         // eScreen1.receiveShadow = true;
-        eScreen1.layers.disable( BLOOM_SCENE );
-        eScreen1.layers.enable( ENTIRE_SCENE );
+        eScreen1.layers.disable( MyRenderPass.BLOOM_SCENE );
+        eScreen1.layers.enable( MyRenderPass.ENTIRE_SCENE );
         scene.add( eScreen1 );
     }
 }
@@ -564,51 +464,19 @@ function render() {
             renderer.render( scene, camera );
             break;
         case 'Glow only':
-            renderBloom( false );
+            myRenderPass.renderBloom( scene, camera, false );
             break;
         case 'Scene with Glow':
         default:
             // render scene with bloom
-            renderBloom( true );
+            myRenderPass.renderBloom( scene, camera, true );
 
             // render the entire scene, then render bloom scene on top
-            finalComposer.render();
+            myRenderPass.finalRender();
             break;
 
     }
     //renderer.render( scene, camera );
     stats.end();
-
-    // console.log("Scene polycount:", renderer.info.render.triangles)
-    // console.log("Active Drawcalls:", renderer.info.render.calls)
-    // console.log("Textures in Memory", renderer.info.memory.textures)
-    // console.log("Geometries in Memory", renderer.info.memory.geometries)
-    // console.log("Number of Triangles :", renderer.info.render.triangles);
 };
 
-function renderBloom( mask ) {
-
-    if ( mask === true ) {
-        scene.traverse( darkenNonBloomed );
-        bloomComposer.render();
-        scene.traverse( restoreMaterial );
-    } else {
-        camera.layers.set( BLOOM_SCENE );
-        bloomComposer.render();
-        camera.layers.set( ENTIRE_SCENE );
-    }
-}
-
-function darkenNonBloomed( obj ) {
-    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
-        materials[ obj.uuid ] = obj.material;
-        obj.material = darkMaterial;
-    }
-}
-
-function restoreMaterial( obj ) {
-    if ( materials[ obj.uuid ] ) {
-        obj.material = materials[ obj.uuid ];
-        delete materials[ obj.uuid ];
-    }
-}
