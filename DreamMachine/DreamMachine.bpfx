@@ -3,7 +3,7 @@
     "sign": {
       "properties": {
         "id": "cbbb02a4-b2d1-4be8-aea8-da1dadfb09e0",
-        "version": "1.3.10",
+        "version": "1.4.0",
         "name": "DreamMachine",
         "videoMode": "1920x1080x60p",
         "size": {
@@ -492,7 +492,7 @@
         }
       },
       "wssDeviceSpec": {},
-      "lastModifiedTime": "2023-03-09T11:09:52.991Z"
+      "lastModifiedTime": "2023-03-13T09:30:44.520Z"
     },
     "zones": {
       "zonesById": {

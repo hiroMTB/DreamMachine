@@ -11,7 +11,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
 
-const globalScale = 3;
+const globalScale = 1;
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
 
@@ -51,7 +51,7 @@ const startTime = Date.now();
 
 let gui;
 const params = {
-    debug: false,
+    debug: true,
     camera: 'ortho',
     speed: 0.5,
     colorSpeed: 1/(23.0*60),
@@ -63,10 +63,25 @@ const params = {
     scene: 'Scene with Glow'
 };
 
-let emitters =[];
+let emitters =[[]];
 let emitterMaterials =[];
 let centerLights = [];
 // let centerLightHelpers = [];
+
+const supported = (() => {
+    try {
+if (typeof WebAssembly === "object"
+           && typeof WebAssembly.instantiate === "function") {
+           const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+           if (module instanceof WebAssembly.Module)
+               return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
+       }
+   } catch (e) {
+   }
+   return false;
+})();
+
+console.log(supported ? "WebAssembly is supported" : "WebAssembly is not supported");   
 
 main();
 
@@ -305,19 +320,28 @@ function makeMeshFromGeoms( geoms, svgData, material, z, scaleX, scaleY ){
 
 function setupEmitter(){
 
+    const numEmitters = 3;
+
     // const geometry = new THREE.IcosahedronGeometry( 14, 8 );
     const geometry = new THREE.SphereBufferGeometry( 10, 10, 10 );
     const color = new THREE.Color(0xffffff);
-    for(let i=0; i<3; i++){
+
+    
+    for(let i=0; i<6; i++){
+        const dummy = [];
+        emitters.push( dummy );
+    }
+
+    for(let i=0; i<numEmitters; i++){
         const material = new THREE.MeshBasicMaterial( { color: color } );
         emitterMaterials.push(material);
 
-        for(let j=0; j<2; j++){
+        for(let j=0; j<6; j++){
             const sphere = new THREE.Mesh( geometry, material );
             sphere.position.set(0,0,0);
             scene.add( sphere );
             sphere.layers.enable( BLOOM_SCENE );
-            emitters.push(sphere);
+            emitters[j].push(sphere);
         }
     }
 
@@ -362,35 +386,59 @@ function animateProspects(){
 }
 
 function animateEmitter(timer){ 
-    const numPL = emitters.length; // expect 6
+    const num = emitters[0].length; // expect 3
 
-    for(let i=0; i<numPL/2; i++){
-        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 2 * (i+1)*0.4) * resolutionW/2;
-        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.05 * 5 * (i+1)*0.4) * resolutionH/2;
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.05 * 3 * (i+1)*0.4) * 500;
-
-        emitters[i*2].position.x = x;
-        emitters[i*2].position.y = y;
-        emitters[i*2].position.z = z;
-        // z: -300 ~ 300 -> 0.5 ~ 1.5
-        let scale = mapVal(z, -300, 300, 0.75, 1.25, true);
-        emitters[i*2].scale.set(scale,scale,scale);
-
-        let size = resolutionW;
+    for(let i=0; i<num; i++){
+        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 2 * (i+1)*0.4) * resolutionW/2;
+        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.5 * 5 * (i+1)*0.4) * resolutionH/2;
+        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 3 * (i+1)*0.4) * 500;
+        const w = resolutionW;
+        const scale = mapVal(z, -300, 300, 0.75, 1.25, true);
         
-        // x: -size/2 - size/2
-        // x2: 0 - size
-        let x2 = x + size/2;
-        if(x2<-size/2) x2 = size/2+x2;
-        else if(size/2<x2) x2 = x2-size;
+        {        
+            // front, main emitter
+            emitters[0][i].position.set(x, y, z);
+            emitters[0][i].scale.set(scale,scale,scale);
+        }
 
-        if(x2 < -size/2) x2 = size/2 + x2
-        emitters[i*2+1].position.x =  x2;
-        emitters[i*2+1].position.y =  y;
-        emitters[i*2+1].position.z = -z;
+        {
+            // Left
+            let x1 = x - w;
+            emitters[1][i].position.set(x1, y, z);
+            emitters[1][i].scale.set(scale,scale,scale);
+        }
+        
+        {
+            // Right
+            let x2 = x + w;
+            emitters[2][i].position.set(x2, y, z);
+            emitters[2][i].scale.set(scale,scale,scale);
+        }
 
-        let scale2 = mapVal(-z, -300, 300, 0.5, 1.5, true);
-        emitters[i*2+1].scale.set(scale2, scale2, scale2);
+        let xB = x + w/2;
+        const scaleB = mapVal(-z, -300, 300, 0.5, 1.5, true);
+        {
+            // back side
+            if(xB<-w/2) xB = w/2+xB;
+            else if(w/2<xB) xB = xB - w;
+            if(xB < -w/2) xB = w/2 + xB
+            emitters[3][i].position.set(xB, y, -z);
+            emitters[3][i].scale.set(scaleB, scaleB, scaleB);
+        }
+        
+        {
+            // back side left
+            const xB2 = xB - w;
+            emitters[4][i].position.set(xB2, y, -z);
+            emitters[4][i].scale.set(scaleB, scaleB, scaleB);
+        }
+        
+        {
+            // back side right
+            const xB3 = xB + w;
+            emitters[5][i].position.set(xB3, y, -z);
+            emitters[5][i].scale.set(scaleB, scaleB, scaleB);
+        }
     }
 }
 
