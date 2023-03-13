@@ -53,13 +53,18 @@ let gui;
 const params = {
     debug: true,
     camera: 'ortho',
-    speed: 0.5,
+
+    // Kerim prospect rotation speed
+    speed: 1.5,
+
+    // Kerim color change speed (smaller is faster)
     colorSpeed: 1/(23.0*60),
 
+    // Kerim Bloom Parameters
     exposure: 1,
-    bloomStrength: 4,
+    bloomStrength: 3,
     bloomThreshold: 0,
-    bloomRadius: 1,
+    bloomRadius: 0.75,
     scene: 'Scene with Glow'
 };
 
@@ -224,7 +229,7 @@ function setupGUI(){
 function setupWall(){
      
     const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0x111111 } );
+    const material = new THREE.MeshBasicMaterial( { color: 0xF0F0F0 } ); // Kerim Wall color
 
     wall = new THREE.Mesh( geometry, material );
     wall.position.set(0, 0, -700);
@@ -239,24 +244,24 @@ function setupProspects(){
     prospects = [];
     
     {
-        // prospect 0
+        // prospect 0, front
         const svgTag = document.getElementById('svg0');
         const svgData = loadSvg(svgTag);
         const geoms = makeGeomFromSvgData(svgData);
         const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1));
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1)); // Kerim position P0 on z axis
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, 200, 1, 1)); // Kerim position P0 on z axis
     }
 
     {
-        // prospect 1
+        // prospect 1, back
         const svgTag = document.getElementById('svg1');
         const svgData = loadSvg(svgTag);
         const geoms = makeGeomFromSvgData(svgData);
-        // const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
-        const material = new THREE.MeshPhongMaterial( {color: 0xffffff, transparent: false, side: THREE.DoubleSide, specular: 0xaaaaaa, shininess: 20} );
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY));
-        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY));
+        // const material = new THREE.MeshBasicMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide} );
+        const material = new THREE.MeshPhongMaterial( {color: 0x111111, transparent: false, side: THREE.DoubleSide, specular: 0x222222, shininess: 30} );
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY)); // Kerim position P1 on z axis
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, -300, 1, prospect2scaleY)); // Kerim position P1 on z axis
     }    
 
     for(let p of prospects){
@@ -323,7 +328,7 @@ function setupEmitter(){
     const numEmitters = 3;
 
     // const geometry = new THREE.IcosahedronGeometry( 14, 8 );
-    const geometry = new THREE.SphereBufferGeometry( 10, 10, 10 );
+    const geometry = new THREE.SphereBufferGeometry( 15, 10, 10 );
     const color = new THREE.Color(0xffffff);
 
     
@@ -349,12 +354,12 @@ function setupEmitter(){
         const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
         const texture = new THREE.Texture( generateTexture() );
         texture.needsUpdate = true;
-        //  const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
-        const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
+         const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true, opacity: 0.3, side:THREE.DoubleSide } ) ;        
+        // const material = new THREE.MeshBasicMaterial( { color: 0x333333, transparent: true, opacity: 0.3 } );
 
         const eScreen1 = new THREE.Mesh( geometry, material );
-        eScreen1.position.set(0, 0, -600);
-        eScreen1.receiveShadow = true;
+        eScreen1.position.set(0, 0, 0); // Kerim postion Center Light on z axis (x, y, z)
+        // eScreen1.receiveShadow = true;
         eScreen1.layers.disable( BLOOM_SCENE );
         eScreen1.layers.enable( ENTIRE_SCENE );
         scene.add( eScreen1 );
@@ -393,7 +398,10 @@ function animateEmitter(timer){
         const y = Math.sin( i * Math.PI * 0.3 + timer * 0.5 * 5 * (i+1)*0.4) * resolutionH/2;
         const z = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 3 * (i+1)*0.4) * 500;
         const w = resolutionW;
-        const scale = mapVal(z, -300, 300, 0.75, 1.25, true);
+
+        // emitter size mapping
+        // mapVal(value, inputMin, inputMax, outputMin, outputMax, clamp) {
+        const scale = mapVal(z, -500, 500, 1.0, 2.0, true);
         
         {        
             // front, main emitter
@@ -453,26 +461,29 @@ function setDebugMode(debug){
 }
 
 function setupLighting(){
-    // Ambient
-    scene.add( new THREE.AmbientLight( 0xffffff, 0.05 ) );
+    // Kerim Ambientlight everywhere
+    scene.add( new THREE.AmbientLight( 0xffffff, 0.0 ) );
 
     // point light array
     centerLights = [];
     // centerLightHelpers = [];
-    const nCenterLights = 5;
-
+    
+    //Kerim Centerlight parameters below
     // 2800K = rgb(255, 173, 94) = 0xFFAD5E
+    const nCenterLights = 5;
     const cColor = 0xffffff;
+    const intensity = 3.2; //was 3
+    const distance = 300;
+    const decay = 1;
 
     const step = resolutionW / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
-        const p = new THREE.PointLight( cColor, 3, 300, 3.5);
+        const p = new THREE.PointLight( cColor, intensity, distance, decay);
         const x = -resolutionW/2 + step * i;
-        p.position.set(x, 0, -500);
+        p.position.set(x, 0, 100); // Kerim Postion Center Light
         centerLights.push(p);
-
         // const helper = new THREE.PointLightHelper( p, 10 );
-        // scene.add( p, helper );
+        scene.add( p );
         // centerLightHelpers.push(helper);
     }
 }
