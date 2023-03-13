@@ -16,7 +16,7 @@ const params = {
     debug: true,
 
     // Kerim prospect rotation speed
-    speed: 1.5,
+    speed: 2.5,
 
     // Kerim color change speed (smaller is faster)
     colorSpeed: 1/(23.0*60),
@@ -39,16 +39,16 @@ const prospect0_z = 200;
 const prospect1_z = -300;
 
 // Kerim postion Center Light on z axis (x, y, z)
-const eScreen_z = 0;
-const eScreenOpacity = 0.3;
+const eScreen_z = -299;
+const eScreenOpacity = 0.4;
 
 //Kerim Centerlight parameters below
-const nCenterLights= 5;
+const nCenterLights= 9;
 const cColor= 0xffffff;
-const intensity= 3.2;
-const distance= 300;
-const decay= 1;
-const centerLight_z= 100;
+const intensity= 10;
+const distance= 120;
+const decay= 2; // Kerim Intesitiy Gradient
+const centerLight_z= 75;
 
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
