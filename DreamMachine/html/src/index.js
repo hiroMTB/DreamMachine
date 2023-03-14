@@ -16,10 +16,11 @@ const params = {
     debug: false,
 
     // Kerim prospect rotation speed
-    speed: 2.5,
+    speed: 3,
 
     // Kerim color change speed (smaller is faster)
     colorSpeed: 1/(23.0*60),
+    emitterSpeed: 0.5,
 
     // Kerim Bloom Parameters
     exposure: 1,
@@ -30,7 +31,7 @@ const params = {
 };
 
 // Kerim Wall color
-const wallColor = 0x555555;
+const wallColor = 0xFFFFFF;
 const wall_z = -700;
 
 // Kerim position P0 on z axis
@@ -42,10 +43,10 @@ const prospect1_z = -300;
 //Kerim Centerlight parameters below
 const nCenterLights= 9;
 const cColor= 0x888888;
-const intensity= 0.6;
+const intensity= 2;
 const distance= 200;
 const decay= 1.2;
-const centerLight_z= -250;
+const centerLight_z= -275;
 
 const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
 
@@ -371,9 +372,9 @@ function animateEmitter(timer){
     const num = emitters[0].length; // expect 3
 
     for(let i=0; i<num; i++){
-        const x = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 2 * (i+1)*0.4) * resolutionW;
-        const y = Math.sin( i * Math.PI * 0.3 + timer * 0.5 * 5 * (i+1)*0.4) * (resolutionH*0.4);
-        const z = Math.cos( i * Math.PI * 0.3 + timer * 0.5 * 3 * (i+1)*0.4) * 400;
+        const x = Math.cos( i * Math.PI * 0.3 + timer * params.emitterSpeed * 2 * (i+1)*0.4) * resolutionW;
+        const y = Math.sin( i * Math.PI * 0.3 + timer * params.emitterSpeed * 5 * (i+1)*0.4) * (resolutionH*0.4);
+        const z = Math.cos( i * Math.PI * 0.3 + timer * params.emitterSpeed * 3 * (i+1)*0.4) * 400;
         const w = resolutionW;
 
         // emitter size mapping
