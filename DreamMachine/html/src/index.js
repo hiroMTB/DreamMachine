@@ -11,7 +11,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
 
-const globalScale = 1;
+const globalScale = 3;
 const params = {
     debug: false,
 
@@ -244,6 +244,8 @@ function setupProspects(){
         const material = new THREE.MeshBasicMaterial( {color: 0x000000, transparent: false, side: THREE.DoubleSide} );
         prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect0_z, 1, 1)); 
         prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect0_z, 1, 1));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect0_z, 1, 1));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect0_z, 1, 1));
     }
 
     {
@@ -253,6 +255,8 @@ function setupProspects(){
         const geoms = makeGeomFromSvgData(svgData);
         // const material = new THREE.MeshBasicMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide} );
         const material = new THREE.MeshPhongMaterial( {color: 0x333333, transparent: false, side: THREE.DoubleSide, specular: 0x111111, shininess: 1} );
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
+        prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
         prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
         prospects.push(makeMeshFromGeoms(geoms, svgData, material, prospect1_z, 1, prospect2scaleY));
     }    
@@ -356,15 +360,33 @@ function animateProspects(){
     if(origin > resolutionW){
         origin = 0;
     }
+    const w = resolutionW;
+    let xpos = [0,0,0,0,0,0,0,0];
+    xpos[0] = -origin;
+    xpos[1] = -origin + w;
+    xpos[2] = -origin + w*2;
+    xpos[3] = -origin - w;
 
-    if(prospects.length == 4){
-        prospects[0].position.setX(-origin);
-        prospects[1].position.setX(-origin+resolutionW);
-        prospects[2].position.setX(origin);
-        prospects[3].position.setX(origin-resolutionW);
+    xpos[4] =  origin;
+    xpos[5] =  origin - w;
+    xpos[6] =  origin - w*2;
+    xpos[7] =  origin + w;
 
-    }else{
-        console.error("prospects.length = " + prospects.length);
+    for(let i=0; i<xpos.length; i++){
+        if(i<4){
+            if(xpos[i] < -w*2 ){
+                xpos[i] -= w*3;
+            }
+        }
+        if(4<=i){
+            if(xpos[i] > w*2 ){
+                xpos[i] += w*3;
+            }
+        }
+    }
+
+    for(let i=0; i<xpos.length; i++){
+        prospects[i].position.setX(xpos[i]);
     }
 }
 
@@ -435,7 +457,7 @@ function setDebugMode(debug){
 
 function setupLighting(){
     // Kerim Ambientlight everywhere
-    // scene.add( new THREE.AmbientLight( 0xffffff, 0.0 ) );
+    scene.add( new THREE.AmbientLight( 0xffffff, 2.0 ) );
 
     // point light array
     centerLights = [];
