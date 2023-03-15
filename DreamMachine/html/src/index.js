@@ -11,12 +11,12 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import hsvToHEX from './ColorConverter';
 import mapVal from './Utils';
 
-const globalScale = 3;
+const globalScale = 1;
 const params = {
     debug: false,
 
     // Kerim prospect rotation speed
-    speed: 3,
+    speed: 2.5,
 
     // Kerim color change speed (smaller is faster)
     colorSpeed: 1/(23.0*60),
@@ -34,6 +34,9 @@ const params = {
 const wallColor = 0xFFFFFF;
 const wall_z = -700;
 
+const eScreen_z = -690;
+const eScreenOpacity = 0.4;
+
 // Kerim position P0 on z axis
 const prospect0_z = 200;
 
@@ -43,7 +46,7 @@ const prospect1_z = -300;
 //Kerim Centerlight parameters below
 const nCenterLights= 9;
 const cColor= 0x888888;
-const intensity= 2;
+const intensity= 5;
 const distance= 200;
 const decay= 1.2;
 const centerLight_z= -275;
@@ -182,7 +185,7 @@ function setupGUI(){
 
     gui.add( params, 'scene', [ 'Scene with Glow', 'Glow only', 'Scene only' ] ).onChange( function ( value ) {
 
-        switch ( value ) 	{
+        switch ( value )    {
             case 'Scene with Glow':
                 bloomComposer.renderToScreen = false;
                 break;
@@ -220,17 +223,13 @@ function setupGUI(){
 }
 
 function setupWall(){
-     
     const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: wallColor } ); 
+    const material = new THREE.MeshStandardMaterial( { color: wallColor, emissive: 0xffffff, emissiveIntensity: 0.3 } ); 
 
     wall = new THREE.Mesh( geometry, material );
     wall.position.set(0, 0, wall_z);
-    // wall.matrixAutoUpdate = false;
-    // wall.receiveShadow = true;
     wall.layers.disable( BLOOM_SCENE );
-    // wall.layers.enable( ENTIRE_SCENE );
-    scene.add( wall );
+    scene.add( wall );    
 }
 
 function setupProspects(){
@@ -457,7 +456,7 @@ function setDebugMode(debug){
 
 function setupLighting(){
     // Kerim Ambientlight everywhere
-    scene.add( new THREE.AmbientLight( 0xffffff, 2.0 ) );
+    //scene.add( new THREE.AmbientLight( 0xffffff, 2.0 ) );
 
     // point light array
     centerLights = [];
