@@ -67,8 +67,13 @@ const pX = 64; // pixelcount X
 const pY = 32; // pixelcount Y
 const tX = 4; // tiles horizontal
 const tY = 7; // tiles vertical
-const resolutionW = pX * tX * globalScale;
-const resolutionH = pY * tY * globalScale;
+const ledResolutionW = pX * tX;
+const ledResolutionH = pY * tY;
+
+const canvasOffsetX = (ledResolutionW*0.5)*globalScale;  // L offset + R offest
+const canvasW = ledResolutionW * globalScale + canvasOffsetX;
+const canvasH = ledResolutionH * globalScale;
+
 let origin = 0;
 let prospect2scaleY = 0.95;
 
@@ -108,9 +113,12 @@ function main() {
     );
     const bg = new THREE.Color(0,0,0);
     renderer.setClearColor(bg, 1);    
-    renderer.setSize( resolutionW, resolutionH );    
+    renderer.setSize( canvasW, canvasH );    
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.setPixelRatio( window.devicePixelRatio );
+
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.left = String(-canvasOffsetX/2) + "px";
 
     document.body.appendChild( renderer.domElement );
 
@@ -119,7 +127,7 @@ function main() {
     scene.children.length = 0;
 
     // Ortho Camera
-    ortho = new THREE.OrthographicCamera(-resolutionW/2, resolutionW/2, resolutionH/2, -resolutionH/2, 1, 3000);
+    ortho = new THREE.OrthographicCamera(-canvasW/2, canvasW/2, canvasH/2, -canvasH/2, 1, 3000);
     ortho.position.set(0, 0, 1100);
     ortho.lookAt(0,0,0);
     controlsOrtho = new OrbitControls( ortho, renderer.domElement );
@@ -140,7 +148,7 @@ function main() {
 function setupRenderPass(){
     const renderScene = new RenderPass( scene, camera );
 
-    bloomPass = new UnrealBloomPass( new THREE.Vector2( resolutionW, resolutionH ), 1.5, 0.4, 0.85 );
+    bloomPass = new UnrealBloomPass( new THREE.Vector2( canvasW, canvasH ), 1.5, 0.4, 0.85 );
     bloomPass.threshold = params.bloomThreshold;
     bloomPass.strength = params.bloomStrength;
     bloomPass.radius = params.bloomRadius;
@@ -149,7 +157,7 @@ function setupRenderPass(){
     bloomComposer.renderToScreen = false;
     bloomComposer.addPass( renderScene );
     bloomComposer.addPass( bloomPass );
-    bloomComposer.setSize( resolutionW, resolutionH );
+    bloomComposer.setSize( canvasW, canvasH );
     
     finalPass = new ShaderPass(
         new THREE.ShaderMaterial( {
@@ -165,7 +173,7 @@ function setupRenderPass(){
     finalPass.needsSwap = true;
 
     finalComposer = new EffectComposer( renderer );
-    finalComposer.setSize( resolutionW, resolutionH);
+    finalComposer.setSize( canvasW, canvasH);
     finalComposer.addPass( renderScene );
     finalComposer.addPass( finalPass );
 }
@@ -223,7 +231,7 @@ function setupGUI(){
 }
 
 function setupWall(){
-    const geometry = new THREE.BoxBufferGeometry( resolutionW, resolutionH, 1 );
+    const geometry = new THREE.BoxBufferGeometry( canvasW, canvasH, 1 );
     const material = new THREE.MeshStandardMaterial( { color: wallColor, emissive: 0xffffff, emissiveIntensity: 0.3 } ); 
 
     wall = new THREE.Mesh( geometry, material );
@@ -355,11 +363,12 @@ function disposeMaterial( obj ) {
 
 function animateProspects(){
 
+    const w = ledResolutionW*globalScale;
+
     origin += params.speed;
-    if(origin > resolutionW){
+    if(origin > w){
         origin = 0;
     }
-    const w = resolutionW;
     let xpos = [0,0,0,0,0,0,0,0];
     xpos[0] = -origin;
     xpos[1] = -origin + w;
@@ -393,11 +402,11 @@ function animateEmitter(timer){
     const num = emitters[0].length; // expect 3
 
     for(let i=0; i<num; i++){
-        const x = Math.cos( i * Math.PI * 0.3 + timer * params.emitterSpeed * 2 * (i+1)*0.4) * resolutionW;
-        const y = Math.sin( i * Math.PI * 0.3 + timer * params.emitterSpeed * 5 * (i+1)*0.4) * (resolutionH*0.4);
+        const w = ledResolutionW * globalScale;
+        const x = Math.cos( i * Math.PI * 0.3 + timer * params.emitterSpeed * 2 * (i+1)*0.4) * w;
+        const y = Math.sin( i * Math.PI * 0.3 + timer * params.emitterSpeed * 5 * (i+1)*0.4) * (canvasH*0.4);
         const z = Math.cos( i * Math.PI * 0.3 + timer * params.emitterSpeed * 3 * (i+1)*0.4) * 400;
-        const w = resolutionW;
-
+        
         // emitter size mapping
         // mapVal(value, inputMin, inputMax, outputMin, outputMax, clamp) {
         const scale = mapVal(z, -400, 400, 1.0, 2.0, true);
@@ -460,11 +469,12 @@ function setupLighting(){
 
     // point light array
     centerLights = [];
-    
-    const step = resolutionW / (nCenterLights-1);
+    const w = ledResolutionW*globalScale;
+
+    const step = w / (nCenterLights-1);
     for(let i=0; i<nCenterLights; i++){
         const p = new THREE.PointLight( cColor, intensity, distance, decay);
-        const x = -resolutionW/2 + step * i;
+        const x = -w/2 + step * i;
         p.position.set(x, 0, centerLight_z );
         centerLights.push(p);
         scene.add( p );
