@@ -1,3 +1,4 @@
+
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { SVGLoader } from './SVGLoader';
@@ -16,7 +17,7 @@ const params = {
     debug: false,
 
     // Kerim prospect rotation speed
-    speed: 2.5,
+    speed: 7.0,
 
     // Kerim color change speed (smaller is faster)
     colorSpeed: 1/(23.0*60),
